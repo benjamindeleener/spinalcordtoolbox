@@ -41,7 +41,12 @@ install:
 script:
   - python ../scripts/sct_check_dependences.py
   - python test_all.py -d 1
+
+  # -----  running unity_tests  -----
+  - cd ./unity_tests
   - py.test
+  - cd ..
+  # --------------------------------
   #- travis_wait python test_smooth_spinalcord.py
   #- travis_wait python test_register_to_template.py
   - cd ../install
