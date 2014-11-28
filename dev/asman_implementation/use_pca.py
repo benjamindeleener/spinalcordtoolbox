@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #########################################################################################
 #
-# Principal Component Analysis
-#
+# Principal Component Analysis based on matplotlib.mlab implementation
 #
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
@@ -19,6 +18,38 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 import scipy
 import copy
+
+
+#class SCT_PCA:
+
+def save_mu(myPCA):
+    scipy.misc.imsave('mu.jpg', myPCA.mu.reshape((19, 12)))
+
+def plot(x, y, z):
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.plot(x, y, z, '.')
+    ax.set_xlabel('m1')
+    ax.set_ylabel('m2')
+    ax.set_zlabel('m3')
+    plt.show()
+
+def get_similar_images(dataMat, myPCA, img):
+    i = -1
+    print len(dataMat)
+    for image in dataMat:
+        print i
+        i += 1
+        l = myPCA.project(image)
+        index = l[0]
+        # if index > 0:
+        print index
+        im = img.data[i]
+        print scipy.misc.imsave(str(index) + "_" + str(i) + '.jpg', copy.copy(im))
+        print "i = " + str(i) + "\n"
+        #print img.data[i]
+        # im = Image.fromarray(im)
+        # im.save(str(index) + ".jpeg")
 
 
 def main():
@@ -44,39 +75,7 @@ def main():
 
     #get_similar_images(dataMat, myPCA, img)
     #plot(x, y, z)
-    save_mu(myPCA)
-
-
-def save_mu(myPCA):
-    scipy.misc.imsave('mu.jpg', myPCA.mu.reshape((19, 12)))
-
-
-def plot(x, y, z):
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.plot(x, y, z, '.')
-    ax.set_xlabel('m1')
-    ax.set_ylabel('m2')
-    ax.set_zlabel('m3')
-    plt.show()
-
-
-def get_similar_images(dataMat, myPCA, img):
-    i = -1
-    print len(dataMat)
-    for image in dataMat:
-        print i
-        i += 1
-        l = myPCA.project(image)
-        index = l[0]
-        # if index > 0:
-        print index
-        im = img.data[i]
-        print scipy.misc.imsave(str(index) + "_" + str(i) + '.jpg', copy.copy(im))
-        print "i = " + str(i) + "\n"
-        #print img.data[i]
-        # im = Image.fromarray(im)
-        # im.save(str(index) + ".jpeg")
+    #save_mu(myPCA)
 
 
 if __name__ == "__main__":
