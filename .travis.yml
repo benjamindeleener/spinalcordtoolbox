@@ -45,7 +45,7 @@ script:
 
   # -----  running unity_tests  -----
   - cd ./unity_tests
-  - PYTHONPATH = py.test
+  - py.test
   - cd ..
   # --------------------------------
   #- travis_wait python test_smooth_spinalcord.py
