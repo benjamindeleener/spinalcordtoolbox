@@ -2,9 +2,10 @@
 
 # Test script for pca_bis
 
-import pytest
-from pca_bis import PCA
 import numpy as np
+
+import pytest
+from msct_pca import PCA
 
 
 @pytest.fixture()
