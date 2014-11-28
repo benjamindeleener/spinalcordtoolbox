@@ -13,6 +13,7 @@ install:
   - cd install/requirements/
   - ./requirements.sh
   - cd ../..
+  - pip install pytest
 
 # FSL
   - bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
