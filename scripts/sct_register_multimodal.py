@@ -33,7 +33,7 @@
 class Param:
     ## The constructor
     def __init__(self):
-        self.debug = 1
+        self.debug = 0
         self.remove_temp_files = 1  # remove temporary files
         self.outSuffix  = "_reg"
         self.padding = 5  # add 'padding' slices at the top and bottom of the volumes if deformation at the edge is not good. Default=5. Put 0 for no padding.
