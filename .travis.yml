@@ -13,7 +13,6 @@ install:
   - cd install/requirements/
   - ./requirements.sh
   - cd ../..
-  - pip install pytest
 
 # FSL
   - bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
@@ -30,6 +29,7 @@ install:
   #- PATH=${PATH}:${SCT_DIR}/scripts
   - PATH=${PATH}:${SCT_DIR}/bin
   - PATH=${PATH}:${SCT_DIR}/bin/linux
+  - export PYTHONPATH = ${SCT_DIR}/scripts
   - export SCT_DIR PATH
   - . ~/.bashrc
 
@@ -45,7 +45,7 @@ script:
 
   # -----  running unity_tests  -----
   - cd ./unity_tests
-  - py.test
+  - PYTHONPATH = py.test
   - cd ..
   # --------------------------------
   #- travis_wait python test_smooth_spinalcord.py
