@@ -7,7 +7,7 @@
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
 # Authors: Augustin Roux
-# Modified: 2014-11-20
+# Modified: 2014-11-28
 #
 # About the license: see the file LICENSE.TXT
 #########################################################################################
