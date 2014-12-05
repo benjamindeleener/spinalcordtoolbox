@@ -15,6 +15,7 @@
 import nibabel as nib
 import sct_utils as sct
 import numpy as np
+import matplotlib.pyplot as plt
 from sct_orientation import get_orientation
 
 
@@ -75,6 +76,12 @@ class Image:
     # rectangles of the same size
     def crop_from_square_mask(self, mask):
         self.data = crop_mask(self.data, mask.data)
+
+    def show(self):
+        imgplot = plt.imshow(self.data)
+        imgplot.set_interpolation('nearest')
+        plt.show()
+
 
 
 def crop_mask(array, data_mask):
