@@ -5,6 +5,21 @@
 # http://sebastianraschka.com/Articles/2014_pca_step_by_step.html#sc_matrix
 #
 #
+# Step 1: Take the whole dataset consisting of J N-dimensional flattened images
+#
+# Step 2: Compute the mean image
+#
+# Step 3: Compute the covariance matrix of the dataset
+#
+# Step 4: Compute the eigenvectors and corresponding eigenvalues
+#
+# Step 5: Sort the eigenvectors by decreasing eigenvalues and choose k in order to keep V of them such as:
+#       sum(kept eigenvalues)/sum(all eigenvalues) > k
+# This will give us a N*V dimensionnal matrix, we call it W, every column represents an eigenvector
+#
+# Step 6: Transform the target image onto the new subspace, this can be done by:
+#       y = W.T*(x - mean)  where x is the target N*1 flatenned image and y is its
+#
 # ----------------------------------------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
 # Authors: Augustin Roux
