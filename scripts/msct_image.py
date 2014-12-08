@@ -79,6 +79,7 @@ class Image:
 
     def show(self):
         imgplot = plt.imshow(self.data)
+        imgplot.set_cmap('gray')
         imgplot.set_interpolation('nearest')
         plt.show()
 

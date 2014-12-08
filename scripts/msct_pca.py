@@ -27,13 +27,13 @@
 #
 # About the license: see the file LICENSE.TXT
 ########################################################################################################################
-
+import matplotlib.pyplot as plt
 import numpy as np
 
 
 class PCA:
 
-    def __init__(self, dataset, k=0.70):
+    def __init__(self, dataset, k=0.80):
         # STEP 1
         self.dataset = dataset  # This should be a J*N dimensional matrix of J N-dimensional flattened images
         self.N = dataset.shape[0]  # The number of rows is the dimension of flattened images
@@ -47,6 +47,9 @@ class PCA:
         # STEP 5
         self.k = k
         self.W, self.kept = self.generate_W()
+        # omega is a matrix of k rows and J columns, each columns correspond to a vector projection of an image from
+        # the dataset
+        self.omega = self.project_dataset()
 
     # STEP 2
     def mean(self, ):
@@ -110,7 +113,6 @@ class PCA:
     # Show all the mode
     def show(self, split=1):
         from math import sqrt
-        import matplotlib.pyplot as plt
         if split:
             n = int(sqrt(2*self.N))
         else:
@@ -124,9 +126,30 @@ class PCA:
             else:
                 imgplot = a.imshow(eigen_V.reshape(n, n))
             imgplot.set_interpolation('nearest')
-            imgplot.set_cmap('Greys')
+            imgplot.set_cmap('gray')
 
         plt.show()
+
+    # Project the all dataset in order to get images "close" to the target & to plot the dataset
+    def project_dataset(self):
+        omega = []
+        for column in self.dataset.T:
+            omega.append(self.project(column).reshape(self.kept,))
+        return np.asarray(omega).T
+
+    # plot the projected dataset on nb_mode modes
+    def plot_omega(self, nb_mode=1, target=None):
+        if self.kept < nb_mode:
+            print "Can't plot {} modes, not enough modes kept. " \
+                  "Try to increase k, which is curently {}".format(nb_mode, self.k)
+            exit(2)
+        assert self.omega.shape == (self.kept, self.J), "The matrix is {}".format(self.omega.shape)
+        for i in range(0, nb_mode):
+            plt.plot(self.omega[i,0:self.J], self.omega[i+1,0 :self.J],
+                     'o', markersize=7, color='blue', alpha=0.5, label='original dataset')
+            plt.title('Transformed samples with class labels mode {}'.format(i))
+            plt.show
+
 
     # TODO
     # project all the images from the dataset in order to calculate geodesical distances between the target image

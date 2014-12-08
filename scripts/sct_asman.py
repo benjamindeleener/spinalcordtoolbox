@@ -37,7 +37,7 @@ class Param:
 def main():
     v = param.verbose
 
-    # Load all the images's slices in param.path_dictionnary
+    # Load all the images's slices from param.path_dictionnary
     list_atlas_seg = load_dictionnary(param.split_data)
 
     # Construct a dataset composed of all the slices
@@ -45,7 +45,9 @@ def main():
     dataset = np.asarray(dataset).T
     sct.printv(dataset.shape, verbose=v)
 
-    # create an PCA instance given teh dataset
+    #save(dataset, list_atlas_seg)
+
+    # create a PCA instance given the dataset
     pca = PCA(dataset)
     sct.printv('J = ' + str(pca.J) + '  N = ' + str(pca.N), verbose=v)
 
@@ -53,15 +55,23 @@ def main():
     target = list_atlas_seg[8][0].flatten()
     coord_projected_img = pca.project(target)
 
-    # if param.split_data:
-    #     img = plt.imshow(img_reducted.reshape(n, n/2))
-    # else:
-    #     imgplot = plt.imshow(img_reducted.reshape(n, n))
-
-
-    # Showing projected image
+    # Showing pca's kept modes and the original & projected image
+    pca.plot_omega()
     pca.show(split=param.split_data)
     show(coord_projected_img, pca, target)
+
+
+########################################################################################################################
+######------------------------------------------------- CLASSES --------------------------------------------------######
+########################################################################################################################
+
+class AppearenceModel:
+
+    def __init__(self, pca, target_image, number_of_variation_mode=5):
+        self.pca = pca
+        self.mean = pca.mean_image
+        self.target = target_image
+        self.number_of_variation_mode = number_of_variation_mode
 
 
 ########################################################################################################################
@@ -143,63 +153,62 @@ def construct_dataset(list_atlas_seg):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def show(coord_projected_img, pca, target):
+    import matplotlib.pyplot as plt
+
+    # Retrieving projected image from the mean image & its coordinates
     import copy
     img_reducted = copy.copy(pca.mean_image)
-    for i in range(0, coord_projected_img.shape[1]):
+    for i in range(0, coord_projected_img.shape[0]):
         img_reducted += int(coord_projected_img[i][0])*pca.W.T[i].reshape(pca.N,1)
-    #pca.show(split=param.split_data)
-    import matplotlib.pyplot as plt
+
     if param.split_data:
         n = int(sqrt(pca.N*2))
     else:
         n = int(sqrt(pca.N))
-    #imgplot = plt.imshow(pca.W)
-    # imgplot.set_interpolation('nearest')
-    # plt.show()
     if param.split_data:
-        imgplot = plt.imshow(img_reducted.reshape(n, n/2))
+        imgplot = plt.imshow(pca.mean_image.reshape(n, n/2))
     else:
-        imgplot = plt.imshow(img_reducted.reshape(n, n))
+        imgplot = plt.imshow(pca.mean_image.reshape(n, n))
     imgplot.set_interpolation('nearest')
-    imgplot.set_cmap('Greys')
+    imgplot.set_cmap('gray')
+    plt.title('Mean Image')
+    plt.show()
+    if param.split_data:
+        imgplot = plt.imshow(target.reshape(n, n/2))
+    else:
+        imgplot = plt.imshow(target.reshape(n, n))
+    imgplot.set_interpolation('nearest')
+    imgplot.set_cmap('gray')
+    plt.title('Original Image')
     plt.show()
     if param.split_data:
         imgplot = plt.imshow(img_reducted.reshape(n, n/2))
     else:
         imgplot = plt.imshow(img_reducted.reshape(n, n))
     imgplot.set_interpolation('nearest')
-    imgplot.set_cmap('Greys')
-    split = param.split_data
+    imgplot.set_cmap('gray')
+    plt.title('Projected Image')
     plt.show()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def save(im):
+# This little loop save projection through several pcas with different k i.e. different number of modes
+def save(dataset, list_atlas_seg):
     import scipy
-    scipy.misc.imsave("/home/django/aroux/Desktop/data_asman/Dictionnary/test.jpeg", im)
+    import copy
+    betas = [0.6, 0.7, 0.75, 0.8, 0.82, 0.85, 0.86, 0.87, 0.88, 0.89, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95]
+    target = list_atlas_seg[8][0].flatten()
+    for beta in betas:
+        pca = PCA(dataset, beta)
+        coord_projected_img = pca.project(target)
+        img_reducted = copy.copy(pca.mean_image)
+        n = int(sqrt(pca.N*2))
+        for i in range(0, coord_projected_img.shape[0]):
+            img_reducted += int(coord_projected_img[i][0])*pca.W.T[i].reshape(pca.N,1)
+        scipy.misc.imsave("/home/django/aroux/Desktop/pca_modesInfluence/"+ str(pca.kept) +"modes.jpeg",
+                          img_reducted.reshape(n, n/2))
 
 
-class AppearenceModel:
-
-    def __init__(self, pca, target_image, number_of_variation_mode=5):
-        self.pca = pca
-        self.mean = pca.mean_image
-        self.target = target_image
-        self.number_of_variation_mode = number_of_variation_mode
-
-
-    def get_eigen_values(self):
-        # J is the number of couple {atlas:seg} that has been used to generate the PCA,
-        # it also is the dimension of the original space
-        J = self.pca.numcols
-
-    # return a vector whose each elements represents the model simylarity betwen all the atlases ans the targe image
-    def get_beta(self, target_img):
-        beta = np.zeros(self.pca.J)
-        t = 1
-        # for omega in Omega:
-        #     norm = np.linalg.norm(omega - target_img, 2)
-        #     beta.append(exp(-t*norm))
 
 
 if __name__ == "__main__":
