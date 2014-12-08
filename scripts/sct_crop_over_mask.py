@@ -21,13 +21,13 @@ def main():
     usage = parser.usage.generate()
 
     arguments = parser.parse(sys.argv[1:])
-    if "-input" in arguments:
-        fname_input = arguments["-input"]
-    if "-mask" in arguments:
-        fname_mask = arguments["-mask"]
-    else:
-        print usage
-        exit(1)
+    #if "-input" in arguments:
+    fname_input = arguments["-input"]
+    #if "-mask" in arguments:
+    fname_mask = arguments["-mask"]
+    #else:
+    #    print usage
+    #    exit(1)
 
     if "-output" in arguments:
         fname_out = arguments["-output"]

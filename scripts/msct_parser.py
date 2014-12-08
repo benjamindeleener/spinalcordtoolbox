@@ -147,6 +147,10 @@ class Parser:
         self.options[name] = Option(name, type_value, description, mandatory, example, default_value, help, self)
 
     def parse(self, arguments):
+        # if no arguments, print usage and quit
+        if len(arguments) == 0:
+            self.usage.error()
+
         # initialize results
         dictionary = dict()
 
@@ -265,8 +269,12 @@ last modified on """ + str(creation[0]) + '-' + str(creation[1]) + '-' +str(crea
         else:
             return usage
 
-    def error(self, error):
-        self.generate(error)
+    def error(self, error=None):
+        if error:
+            self.generate(error)
+        else:
+            print self.generate()
+            sys.exit(0)
 
 ########################################################################################################################
 ####### SPELLING CHECKER
