@@ -31,8 +31,8 @@ class Image:
             self.orientation = get_orientation(path)
             self.data = im_file.get_data()
             self.hdr = im_file.get_header()
-            self.path, self.file, self.ext = sct.extract_fname(path)
-        elif np_array:
+            self.path, self.file_name, self.ext = sct.extract_fname(path)
+        elif np_array is not None:
             self.data = np_array
             self.path = None
             self.orientation = None
@@ -43,9 +43,9 @@ class Image:
         #hdr.set_data_dtype(img_type) # set imagetype to uint8 #TODO: maybe use int32
         self.hdr.set_data_shape(self.data.shape)
         img = nib.Nifti1Image(self.data, None, self.hdr)
-        print 'saving ' + self.path + self.file + self.ext + '\n'
+        print 'saving ' + self.path + self.file_name + self.ext + '\n'
         print self.hdr.get_data_shape()
-        nib.save(img, self.path + self.file + self.ext)
+        nib.save(img, self.path + self.file_name + self.ext)
 
     # flatten the array in a single dimension vector
     def flatten(self):
@@ -75,51 +75,48 @@ class Image:
     # crop the image in order to keep only voxels in the mask, therefore the mask's slices must be squares or
     # rectangles of the same size
     def crop_from_square_mask(self, mask):
-        self.data = crop_mask(self.data, mask.data)
+        array = self.data
+        data_mask = mask.data
+        print 'ORIGINAL SHAPE: ', array.shape, '   ==   ', data_mask.shape
+        array = np.asarray(array)
+        data_mask = np.asarray(data_mask)
+        new_data = []
+        buffer = []
+        buffer_mask = []
+        s = 0
+        r = 0
+        ok = 0
+        for slice in data_mask:
+            #print 'SLICE ', s, slice
+            for row in slice:
+                if sum(row) > 0:
+                    buffer_mask.append(row)
+                    buffer.append(array[s][r])
+                    #print 'OK1', ok
+                    ok += 1
+                r += 1
+            new_slice_mask = np.asarray(buffer_mask).T
+            new_slice = np.asarray(buffer).T
+            r = 0
+            buffer = []
+            for row in new_slice_mask:
+                if sum(row) != 0:
+                    buffer.append(new_slice[r])
+                r += 1
+            #print buffer
+            new_slice = np.asarray(buffer).T
+            r = 0
+            buffer_mask = []
+            buffer = []
+            new_data.append(new_slice)
+            s += 1
+        new_data = np.asarray(new_data)
+        #print data_mask
+        print 'SHAPE ', new_data.shape
+        return new_data
 
     def show(self):
         imgplot = plt.imshow(self.data)
         imgplot.set_cmap('gray')
         imgplot.set_interpolation('nearest')
         plt.show()
-
-
-
-def crop_mask(array, data_mask):
-    print 'ORIGINAL SHAPE: ', array.shape, '   ==   ', data_mask.shape
-    array = np.asarray(array)
-    data_mask = np.asarray(data_mask)
-    new_data = []
-    buffer = []
-    buffer_mask = []
-    s = 0
-    r = 0
-    ok = 0
-    for slice in data_mask:
-        #print 'SLICE ', s, slice
-        for row in slice:
-            if sum(row) > 0:
-                buffer_mask.append(row)
-                buffer.append(array[s][r])
-                #print 'OK1', ok
-                ok += 1
-            r += 1
-        new_slice_mask = np.asarray(buffer_mask).T
-        new_slice = np.asarray(buffer).T
-        r = 0
-        buffer = []
-        for row in new_slice_mask:
-            if sum(row) != 0:
-                buffer.append(new_slice[r])
-            r += 1
-        #print buffer
-        new_slice = np.asarray(buffer).T
-        r = 0
-        buffer_mask = []
-        buffer = []
-        new_data.append(new_slice)
-        s += 1
-    new_data = np.asarray(new_data)
-    #print data_mask
-    print 'SHAPE ', new_data.shape
-    return new_data

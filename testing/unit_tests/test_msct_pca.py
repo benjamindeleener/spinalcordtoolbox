@@ -27,12 +27,12 @@ def test_indices(pca):
 
 
 def test_mean_image(pca):
-    np.testing.assert_array_equal(pca.mean_image, np.array([[2], [3]]), \
+    np.testing.assert_array_equal(pca.mean_image, np.array([[2], [3]]),
                                   'PCA.mean() method is not functioning correctly\n')
 
 
-def test_scatter_matrix(pca):
-    np.testing.assert_array_equal(pca.scatter_matrix, np.array([[2, 2], [2, 2]]), \
+def test_covariance_matrix(pca):
+    np.testing.assert_array_equal(3.0*pca.covariance_matrix, np.array([[2.0, 2.0], [2.0, 2.0]]),
                                   'PCA.scatter_matrix() method is not functioning properly\n')
 
 

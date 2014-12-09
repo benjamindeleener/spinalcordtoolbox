@@ -22,8 +22,8 @@ def test_split(slice):
                                       [9, 10]])
 
     right_slice_expected = np.asarray([[4, 3],
-                                      [8, 7],
-                                      [12, 11]])
+                                       [8, 7],
+                                       [12, 11]])
 
     np.testing.assert_array_equal(left_slice, left_slice_expected,
                                   'PB left_slice')

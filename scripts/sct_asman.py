@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-#########################################################################################
+########################################################################################################################
 #
 # Asman et al. groupwise multi-atlas segmentation method implementation
 #
-# ---------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
 # Author: Augustin Roux
 # Modified: 2014-11-20
 #
 # About the license: see the file LICENSE.TXT
-#########################################################################################
+########################################################################################################################
 from scipy.misc import toimage
 from msct_pca import PCA
 import numpy as np
@@ -126,10 +126,10 @@ def load_dictionnary(split_data):
 def split(slice):
     left_slice = []
     right_slice = []
-    row_length = slice.shape[0]
+    row_length = slice.shape[1]
     print 'ROW LEN = ', row_length
     i = 0
-    for column in slice:
+    for column in slice.T:
         if i < row_length/2:
             left_slice.append(column)
         else:
@@ -137,7 +137,9 @@ def split(slice):
         i += 1
     left_slice = np.asarray(left_slice).T
     right_slice = np.asarray(right_slice).T
-    assert (left_slice.shape == right_slice.shape), str(left_slice.shape) + '==' + str(right_slice.shape) + 'You should check that the first dim of your image (or slice) is an odd number'
+    assert (left_slice.shape == right_slice.shape), \
+        str(left_slice.shape) + '==' + str(right_slice.shape) +\
+        'You should check that the first dim of your image (or slice) is an odd number'
     return left_slice, right_slice
 
 

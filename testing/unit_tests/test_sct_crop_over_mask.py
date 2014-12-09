@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import msct_image
+from msct_image import Image
 import numpy as np
 import pytest
 
@@ -7,22 +8,22 @@ import pytest
 # Creating fake 4x4x4 images including a cubic 4x2x2 mask
 @pytest.fixture()
 def array_mask():
-    mask = np.asarray([[[0, 0, 0, 0],
-                        [0, 1, 1, 0],
-                        [0, 1, 1, 0],
-                        [0, 0, 0, 0]],
-                       [[0, 0, 0, 0],
-                        [0, 1, 1, 0],
-                        [0, 1, 1, 0],
-                        [0, 0, 0, 0]],
-                       [[0, 0, 0, 0],
-                        [0, 1, 1, 0],
-                        [0, 1, 1, 0],
-                        [0, 0, 0, 0]],
-                       [[0, 0, 0, 0],
-                        [0, 1, 1, 0],
-                        [0, 1, 1, 0],
-                        [0, 0, 0, 0]]])
+    data_mask = np.asarray([[[0, 0, 0, 0],
+                             [0, 1, 1, 0],
+                             [0, 1, 1, 0],
+                             [0, 0, 0, 0]],
+                            [[0, 0, 0, 0],
+                             [0, 1, 1, 0],
+                             [0, 1, 1, 0],
+                             [0, 0, 0, 0]],
+                            [[0, 0, 0, 0],
+                             [0, 1, 1, 0],
+                             [0, 1, 1, 0],
+                             [0, 0, 0, 0]],
+                            [[0, 0, 0, 0],
+                             [0, 1, 1, 0],
+                             [0, 1, 1, 0],
+                             [0, 0, 0, 0]]])
 
     array = np.asarray([[[0, 0, 0, 0],
                          [0, 0, 0, 0],
@@ -40,18 +41,21 @@ def array_mask():
                          [1, 0, 0, 2],
                          [0, 0, 0, 0],
                          [0, 0, 0, 0]]])
-    return array, mask
+    mask = Image(np_array=data_mask)
+    img = Image(np_array=array)
+
+    return img, mask
 
 
 def test_crop_mask(array_mask):
-    array, mask = array_mask
-    print msct_image.crop_mask(array, mask)
-    np.testing.assert_array_equal(msct_image.crop_mask(array, mask), np.asarray([[[0, 0],
-                                                                                  [8, 0]],
-                                                                                 [[2, 3],
-                                                                                  [0, 5]],
-                                                                                 [[6, 7],
-                                                                                  [8, 0]],
-                                                                                 [[0, 0],
-                                                                                  [0, 0]]]),\
+    img, mask = array_mask
+    print img.crop_from_square_mask(mask)
+    np.testing.assert_array_equal(img.crop_from_square_mask(mask), np.asarray([[[0, 0],
+                                                                                [8, 0]],
+                                                                               [[2, 3],
+                                                                                [0, 5]],
+                                                                               [[6, 7],
+                                                                                [8, 0]],
+                                                                               [[0, 0],
+                                                                                [0, 0]]]),
                                   'sct_crop_over_mask does not work')
