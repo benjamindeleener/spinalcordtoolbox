@@ -49,8 +49,8 @@ def test_generate_w(pca, dataset):
     # assert (pca.W.shape == (2, 2)), 'PCA.w is not set properly\n'
 
 
-def test_project(pca, dataset):
-    print pca.project(pca.mean_image)
-    pca = PCA(dataset, k=1)
-    print pca.project(pca.mean_image)
+# def test_project(pca, dataset):
+#     print pca.project(pca.mean_image)
+#     pca = PCA(dataset, k=1)
+#     print pca.project(pca.mean_image)
 

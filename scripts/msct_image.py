@@ -21,7 +21,7 @@ from sct_orientation import get_orientation
 
 class Image:
 
-    def __init__(self, path=None, verbose=0, np_array=None):
+    def __init__(self, path=None, verbose=0, np_array=None, split=False):
         if path is not None:
             sct.check_file_exist(path, verbose=verbose)
             try:
@@ -38,6 +38,9 @@ class Image:
             self.orientation = None
         else:
             raise TypeError(' Image constructor takes at least one argument.')
+        if split:
+            self.data = self.split_data()
+        self.dim = self.data.shape
 
     def save(self):
         #hdr.set_data_dtype(img_type) # set imagetype to uint8 #TODO: maybe use int32
@@ -47,8 +50,10 @@ class Image:
         print self.hdr.get_data_shape()
         nib.save(img, self.path + self.file_name + self.ext)
 
-    # flatten the array in a single dimension vector
+    # flatten the array in a single dimension vector, its shape will be (d, 1) compared to the flatten built in method
+    # which would have returned (d,)
     def flatten(self):
+#        return self.data.flatten().reshape(self.data.flatten().shape[0], 1)
         return self.data.flatten()
 
     # return a list of the image slices flattened
@@ -58,14 +63,7 @@ class Image:
             slices.append(slc.flatten())
         return slices
 
-    # return image dimensions
-    def get_dim(self):
-        if self.orientation:
-            return self.orientation
-        else:
-            sct.printv('No file provided for the image')
-
-    # return an empty image of the same size as the image passed in parameters
+    # return an empty image of the same size as the image self
     def empty_image(self):
         import copy
         im_buf = copy.copy(self)
@@ -74,6 +72,7 @@ class Image:
 
     # crop the image in order to keep only voxels in the mask, therefore the mask's slices must be squares or
     # rectangles of the same size
+    # This method is called in sct_crop_over_mask script
     def crop_from_square_mask(self, mask):
         array = self.data
         data_mask = mask.data
@@ -120,3 +119,13 @@ class Image:
         imgplot.set_cmap('gray')
         imgplot.set_interpolation('nearest')
         plt.show()
+
+    def split_data(self):
+        from sct_asman import split
+        new_data = []
+        for slice in self.data:
+            left, right = split(slice)
+            new_data.append(left)
+            new_data.append(right)
+        new_data = np.asarray(new_data)
+        return new_data

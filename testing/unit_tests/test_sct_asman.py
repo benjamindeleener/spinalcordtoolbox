@@ -5,6 +5,7 @@
 import pytest
 import numpy as np
 import sct_asman
+import msct_image
 
 @pytest.fixture()
 def slice():
@@ -15,15 +16,15 @@ def slice():
 
 
 def test_split(slice):
-    left_slice, right_slice = sct_asman.split(slice)
+    #left_slice, right_slice = sct_asman.split(slice)
+    left_slice, right_slice = msct_image.split(slice)
 
-    left_slice_expected = np.asarray([[1, 2],
-                                      [5, 6],
-                                      [9, 10]])
 
-    right_slice_expected = np.asarray([[4, 3],
-                                       [8, 7],
-                                       [12, 11]])
+    left_slice_expected = np.asarray([[1,  5,  9],
+                                      [2,  6, 10]])
+
+    right_slice_expected = np.asarray([[4,  8, 12],
+                                       [3,  7, 11]])
 
     np.testing.assert_array_equal(left_slice, left_slice_expected,
                                   'PB left_slice')
