@@ -27,7 +27,7 @@ class Param:
         self.patient_id = ['09', '24', '30', '31', '32', '25', '10', '08', '11', '16', '17', '18']
         #self.patient_id = ['09', '24', '30', '31', '32']
         self.include_GM = 0
-        self.split_data = 1
+        self.split_data = 1  # this flag enables to duplicate the image in the right-left direction in order to have more dataset for the PCA
         self.verbose = 0
 
 
@@ -171,7 +171,7 @@ class AppearanceModel:
             orig_ax = fig1.add_subplot(10, 3, index)
             orig_ax.set_title('original slice {} '.format(index))
             if self.param.split_data:
-                imgplot = orig_ax.imshow(self.target.data[index].reshape(n / 2, n))
+                imgplot = orig_ax.imshow(self.target.data[index, :, :].reshape(n / 2, n))
             else:
                 imgplot = orig_ax.imshow(self.target.data[index].reshape(n, n))
             imgplot.set_interpolation('nearest')
