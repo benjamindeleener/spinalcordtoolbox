@@ -10,10 +10,14 @@
 #
 # About the license: see the file LICENSE.TXT
 ########################################################################################################################
+
+# TODO change 'target' by 'input'
+
 from scipy.misc import toimage
 from msct_pca import PCA
 import numpy as np
 from math import sqrt
+from math import exp
 from msct_image import Image
 from msct_parser import *
 import matplotlib.pyplot as plt
@@ -40,7 +44,8 @@ def main():
 
     if param.debug:
         print '\n*** WARNING: DEBUG MODE ON ***\n'
-        fname_input = "/home/django/aroux/Desktop/data_asman/Dictionnary/errsm_08.nii.gz"
+        fname_input = "/home/django/aroux/Desktop/data_asman/Dictionnary/errsm_34.nii.gz"
+        fname_input = "/home/django/aroux/Desktop/data_asman/Dictionnary/errsm_34_seg_in.nii.gz"
     else:
         parser = Parser(__file__)
         parser.usage.set_description('Project all the imput image slices on a PCA generated from set of t2star images')
@@ -64,8 +69,11 @@ def main():
 
 
 ########################################################################################################################
-######--------------------------------------------- AppearanceModel ----------------------------------------------######
+######------------------------------------------------- Classes --------------------------------------------------######
 ########################################################################################################################
+
+# ----------------------------------------------------------------------------------------------------------------------
+# APPEARANCE MODEL -----------------------------------------------------------------------------------------------------
 class AppearanceModel:
     def __init__(self, target_image=None, param=None):
         if param is None:
@@ -83,6 +91,7 @@ class AppearanceModel:
         self.target = target_image
         # coord_projected_target is a list of all the coord of the target's projected slices
         self.coord_projected_target = self.pca.project(target_image) if target_image is not None else None
+        self.beta = self.compute_beta()
 
     # ------------------------------------------------------------------------------------------------------------------
     # Load the dictionary:
@@ -93,8 +102,8 @@ class AppearanceModel:
         list_atlas_seg = []
         # loop across all the volume
         for id in param.patient_id:
-            atlas = Image(self.param.path_dictionnary + 'errsm_' + id + '.nii.gz')
-            #atlas = Image(param.path_dictionnary + 'errsm_' + id + '_seg_in.nii.gz')
+            #atlas = Image(self.param.path_dictionnary + 'errsm_' + id + '.nii.gz')
+            atlas = Image(param.path_dictionnary + 'errsm_' + id + '_seg_in.nii.gz')
 
             if split_data:
                 if self.param.include_GM:
@@ -195,13 +204,51 @@ class AppearanceModel:
             # plt.show()
         plt.show()
 
-
     # ------------------------------------------------------------------------------------------------------------------
     # plot the pca and the target projection if target is provided
     def plot_omega(self):
         self.pca.plot_omega(target_coord=self.coord_projected_target) if self.coord_projected_target is not None \
             else self.pca.plot_omega()
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# RIGID REGISTRATION ---------------------------------------------------------------------------------------------------
+class RigidRegistration:
+    def __init__(self, appearance_model):
+        self.beta = compute_beta(appearance_model)
+        self.mu = appearance_model.pca.omega.dot(self.beta)
+        self.sigma = self.compute_sigma(appearance_model)
+
+    def compute_sigma(self, appearance_model):
+        sigma = []
+        j = 0
+        for w_v in appearance_model.pca.omega.T:
+            sig = 0
+            for w_j in w_v:
+                sig += self.beta[j]*(w_j - self.mu[j])
+            sigma.append(sig)
+        return sigma
+
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# beta is the model similarity between all the individual images and our input image
+# beta = (1/Z)exp(-theta*square_norm(omega-omega_j))
+# Z is the partition function that enforces the constraint tha sum(beta)=1
+def compute_beta(appearance_model):
+    beta = []
+    theta = 1
+    if appearance_model.coord_projected_target:
+        # in omega matrix, each column correspond to the pojection of one of the original data image,
+        # the transpose operator .T enable the loop to iterate over all the images coord
+        for omega_j in appearance_model.pca.omega.T:
+            square_norm = np.linalg.norm((omega_j - appearance_model.coord_projected_target), 2)
+            beta.append(exp(-theta*square_norm))
+    else:
+        raise Exception("No projected input in the appearance model")
+    Z = sum(beta)
+    beta = np.asarray((1/Z)*beta)
+    return beta
 
 ########################################################################################################################
 ######------------------------------------------------ FUNCTIONS -------------------------------------------------######
@@ -257,7 +304,7 @@ def show(coord_projected_img, pca, target):
     else:
         imgplot = plt.imshow(target.reshape(n, n))
     imgplot.set_interpolation('nearest')
-    imgplot.set_cmap('gray')
+    #imgplot.set_cmap('gray')
     plt.title('Original Image')
     plt.show()
     if param.split_data:
@@ -265,7 +312,7 @@ def show(coord_projected_img, pca, target):
     else:
         imgplot = plt.imshow(img_reducted.reshape(n, n))
     imgplot.set_interpolation('nearest')
-    imgplot.set_cmap('gray')
+    #imgplot.set_cmap('gray')
     plt.title('Projected Image')
     plt.show()
 

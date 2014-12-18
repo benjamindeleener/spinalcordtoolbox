@@ -141,15 +141,15 @@ class PCA:
         fig = plt.figure()
         for i_fig in range(0, self.kept):
             eigen_V = self.W.T[i_fig, :]
-            # TODO: size of the sublot is fixed
-            a = fig.add_subplot(3, 2, i_fig + 1)
+            # TODO: size of the sublot is fixed, must code it to fit dynamically
+            a = fig.add_subplot(5, 3, i_fig + 1)
             a.set_title('Mode {}'.format(i_fig))
             if split:
                 imgplot = a.imshow(eigen_V.reshape(n/2, n))
             else:
                 imgplot = a.imshow(eigen_V.reshape(n, n))
             imgplot.set_interpolation('nearest')
-            imgplot.set_cmap('gray')
+            #imgplot.set_cmap('gray')
 
         plt.show()
 

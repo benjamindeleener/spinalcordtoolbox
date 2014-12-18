@@ -112,7 +112,7 @@ class Image:
         new_data = np.asarray(new_data)
         #print data_mask
         print 'SHAPE ', new_data.shape
-        return new_data
+        self.data = new_data
 
     def show(self):
         imgplot = plt.imshow(self.data)
