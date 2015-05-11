@@ -47,7 +47,7 @@ class LineBuilder:
             # if user clicked outside the axis, ignore
             return
         if event.button == 2 or event.button == 3:
-            # if right button, remove last point
+            # if right bu tton, remove last point
             del self.xs[-1]
             del self.ys[-1]
         if len(self.xs) >= 2:
@@ -71,7 +71,7 @@ def cropwithcommandline(arguments):
         print "An output file needs to be specified using the command line"
         sys.exit(2)
 
-    cmd = "sct_crop_image" + " -i " + in_filename + " -o " + output_filename
+    cmd = "isct_crop_image" + " -i " + in_filename + " -o " + output_filename
 
     # Handling optional arguments
     if "-v" in arguments:
@@ -79,15 +79,15 @@ def cropwithcommandline(arguments):
     if "-m" in arguments:
         cmd += " -m " + arguments["-m"]
     if "-start" in arguments:
-        cmd += " -start " + arguments["-start"]
+        cmd += " -start " + ','.join(map(str, arguments["-start"]))
     if "-end" in arguments:
-        cmd += " -end " + arguments["-end"]
+        cmd += " -end " + ','.join(map(str, arguments["-end"]))
     if "-dim" in arguments:
-        cmd += " -dim " + arguments["-dim"]
+        cmd += " -dim " + ','.join(map(str, arguments["-dim"]))
     if "-shift" in arguments:
-        cmd += " -shift " + arguments["-shift"]
+        cmd += " -shift " + ','.join(map(str, arguments["-shift"]))
     if "-b" in arguments:
-        cmd += " -b " + arguments["-b"]
+        cmd += " -b " + str(arguments["-b"])
     if "-bmax" in arguments:
         cmd += " -bmax"
     if "-ref" in arguments:
@@ -96,11 +96,11 @@ def cropwithcommandline(arguments):
         cmd += " -mesh " + arguments["-mesh"]
 
     # Run command line
-    sct.run(cmd, verbose)
+    sct.run(cmd, 2)
 
     # Complete message
-    sct.printv('\nDone! To view results, type:', verbose)
-    sct.printv("fslview "+in_filename+" "+output_filename+" -l Red -b 0,1 -t 0.7 &\n", verbose, 'info')
+    sct.printv('\nDone! To view results, type:', arguments["-v"])
+    sct.printv("fslview "+output_filename+" &\n", arguments["-v"], 'info')
 
 def cropwithgui(arguments):
 
@@ -270,7 +270,8 @@ if __name__ == "__main__":
                       type_value="multiple_choice",
                       description="1: display on, 0: display off (default)",
                       mandatory=False,
-                      example=['0', '1'])
+                      example=['0', '1'],
+                      default_value='1')
 
     parser.add_option(name="-h",
                       type_value=None,
@@ -292,24 +293,28 @@ if __name__ == "__main__":
                       description="cropping around the mask",
                       mandatory=False)
     parser.add_option(name="-start",
-                      type_value="float",
+                      type_value=[[','], 'float'],
                       description="start slices, ]0,1[: percentage, 0 & >1: slice number",
-                      mandatory=False)
+                      mandatory=False,
+                      example="40,30,5")
     parser.add_option(name="-end",
-                      type_value="float",
+                      type_value=[[','], 'float'],
                       description="end slices, ]0,1[: percentage, 0: last slice, >1: slice number, <0: last slice - value",
-                      mandatory=False)
+                      mandatory=False,
+                      example="60,100,10")
     parser.add_option(name="-dim",
-                      type_value="int",
+                      type_value=[[','], 'int'],
                       description="dimension to crop, from 0 to n-1, default is 1",
-                      mandatory=False)
+                      mandatory=False,
+                      example="0,1,2")
     parser.add_option(name="-shift",
-                      type_value="int",
+                      type_value=[[','], 'int'],
                       description="adding shift when used with mask, default is 0",
-                      mandatory=False)
+                      mandatory=False,
+                      example="10,10,5")
     parser.add_option(name="-b",
-                      type_value="int",
-                      description="adding shift when used with mask, default is 0",
+                      type_value="float",
+                      description="replace voxels outside cropping region with background value",
                       mandatory=False)
     parser.add_option(name="-bmax",
                       type_value=None,
@@ -329,7 +334,7 @@ if __name__ == "__main__":
 
     # assigning variables to arguments
     input_filename = arguments["-i"]
-    exec_choice = bool(arguments["-g"])
+    exec_choice = bool(int(arguments["-g"]))
     if exec_choice:
         cropwithgui(arguments)
     else:
