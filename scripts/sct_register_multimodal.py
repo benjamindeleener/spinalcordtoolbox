@@ -392,9 +392,9 @@ def register(src, dest, paramreg, param, i_step_str):
         zmax_total = min([zmax_src, zmax_dest])
         # crop data
         src_crop = sct.add_suffix(src, '_crop')
-        sct.run('sct_crop_image -i '+src+' -o '+src_crop+' -dim 2 -start '+str(zmin_total)+' -end '+str(zmax_total), param.verbose)
+        sct.run('isct_crop_image -i '+src+' -o '+src_crop+' -dim 2 -start '+str(zmin_total)+' -end '+str(zmax_total), param.verbose)
         dest_crop = sct.add_suffix(dest, '_crop')
-        sct.run('sct_crop_image -i '+dest+' -o '+dest_crop+' -dim 2 -start '+str(zmin_total)+' -end '+str(zmax_total), param.verbose)
+        sct.run('isct_crop_image -i '+dest+' -o '+dest_crop+' -dim 2 -start '+str(zmin_total)+' -end '+str(zmax_total), param.verbose)
         # update variables
         src = src_crop
         dest = dest_crop
@@ -473,7 +473,7 @@ def pad_image(fname_in, file_out, padding):
 
 def find_zmin_zmax(fname):
     # crop image
-    status, output = sct.run('sct_crop_image -i '+fname+' -dim 2 -bmax -o tmp.nii')
+    status, output = sct.run('isct_crop_image -i '+fname+' -dim 2 -bmax -o tmp.nii')
     # parse output
     zmin, zmax = output[output.find('Dimension 2: ')+13:].split(' ')
     return int(zmin), int(zmax)

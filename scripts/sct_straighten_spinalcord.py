@@ -381,9 +381,9 @@ def main():
 
     # remove padding for straight labels
     if crop == 1:
-        sct.run('sct_crop_image -i tmp.landmarks_straight.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 0 -bzmax', verbose)
-        sct.run('sct_crop_image -i tmp.landmarks_straight_crop.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 1 -bzmax', verbose)
-        sct.run('sct_crop_image -i tmp.landmarks_straight_crop.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 2 -bzmax', verbose)
+        sct.run('isct_crop_image -i tmp.landmarks_straight.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 0 -bzmax', verbose)
+        sct.run('isct_crop_image -i tmp.landmarks_straight_crop.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 1 -bzmax', verbose)
+        sct.run('isct_crop_image -i tmp.landmarks_straight_crop.nii.gz -o tmp.landmarks_straight_crop.nii.gz -dim 2 -bzmax', verbose)
     else:
         sct.run('cp tmp.landmarks_straight.nii.gz tmp.landmarks_straight_crop.nii.gz', verbose)
 
