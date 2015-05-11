@@ -5,8 +5,8 @@
 #
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
-# Authors: Olivier Comtois, Julien Cohen-Adad
-# Modified: 2014-07-30
+# Authors: Benjamin Leener, Julien Cohen-Adad, Olivier Comtois
+# Modified: 2014-05-16
 #
 # About the license: see the file LICENSE.TXT
 #########################################################################################
@@ -252,20 +252,11 @@ if __name__ == "__main__":
                       mandatory=True,
                       example="t2.nii.gz")
 
-    # Command line mandatory arguments
-    parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
-    parser.add_option(name="-o",
-                      type_value="file",
-                      description="output image. This option is REQUIRED for the command line execution",
-                      mandatory=False,
-                      example=['t1', 't2'])
-
     # Optional arguments section
-    parser.usage.addSection("\nOPTIONAL ARGUMENTS")
     parser.add_option(name="-g",
                       type_value="multiple_choice",
-                      description="0: use the command line to crop, 1: use the GUI to crop",
-                      mandatory=True,
+                      description="0: use the command line to crop, 1: use the GUI to crop.",
+                      mandatory=False,
                       example=['0', '1'],
                       default_value='0')
 
@@ -280,6 +271,14 @@ if __name__ == "__main__":
                       type_value=None,
                       description="Displays help",
                       mandatory=False)
+
+    # Command line mandatory arguments
+    parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
+    parser.add_option(name="-o",
+                      type_value="file",
+                      description="output image. This option is REQUIRED for the command line execution",
+                      mandatory=False,
+                      example=['t1', 't2'])
 
     # GUI optional argument
     parser.usage.addSection("\nGUI RELATED OPTIONAL ARGUMENTS")
