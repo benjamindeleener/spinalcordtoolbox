@@ -105,13 +105,13 @@ def main():
 
     # cropping in x & y directions
     fixed_name_temp = fixed_name + "_crop"
-    cmd = "isct_crop_image -i " + fixed_name + ".nii -o " + fixed_name_temp + ".nii -m " + fixed_seg_name + ".nii -shift 10,10 -dim 0,1"
+    cmd = "sct_crop_image -i " + fixed_name + ".nii -o " + fixed_name_temp + ".nii -m " + fixed_seg_name + ".nii -shift 10,10 -dim 0,1"
     print cmd
     sct.run(cmd)
     fixed_name = fixed_name_temp
     if fname_seg_fixed != '':
         fixed_seg_name_temp = fixed_seg_name+"_crop"
-        sct.run("isct_crop_image -i " + fixed_seg_name + ".nii -o " + fixed_seg_name_temp + ".nii -m " + fixed_seg_name + ".nii -shift 10,10 -dim 0,1")
+        sct.run("sct_crop_image -i " + fixed_seg_name + ".nii -o " + fixed_seg_name_temp + ".nii -m " + fixed_seg_name + ".nii -shift 10,10 -dim 0,1")
         fixed_seg_name = fixed_seg_name_temp
 
     #sct_crop_image -i t2star_denoised.nii -o t2star_denoised_crop.nii -m ../t2star_seg.nii.gz -shift 10,10 -dim 0,1
@@ -181,7 +181,7 @@ def main():
     moving_name = moving_name_temp
 
     moving_name_temp = moving_name+"_unpadded"
-    sct.run("isct_crop_image -i "+moving_name+".nii -dim 2 -start "+padding+" -end -"+padding+" -o "+moving_name_temp+".nii")
+    sct.run("sct_crop_image -i "+moving_name+".nii -dim 2 -start "+padding+" -end -"+padding+" -o "+moving_name_temp+".nii")
     sct.run("mv "+moving_name+"0Warp.nii.gz "+file_output+"0Warp"+ext_output)
     sct.run("mv "+moving_name+"0InverseWarp.nii.gz "+file_output+"0InverseWarp"+ext_output)
     moving_name = moving_name_temp

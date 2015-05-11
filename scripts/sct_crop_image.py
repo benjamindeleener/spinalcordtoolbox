@@ -71,7 +71,7 @@ def cropwithcommandline(arguments):
         print "An output file needs to be specified using the command line"
         sys.exit(2)
 
-    cmd = "isct_crop_image" + " -i " + in_filename + " -o " + output_filename
+    cmd = "sct_crop_image" + " -i " + in_filename + " -o " + output_filename
 
     # Handling optional arguments
     if "-v" in arguments:
@@ -251,11 +251,6 @@ if __name__ == "__main__":
                       description="input image.",
                       mandatory=True,
                       example="t2.nii.gz")
-    parser.add_option(name="-g",
-                      type_value="multiple_choice",
-                      description="1: use the GUI to crop, 0: use the command line to crop",
-                      mandatory=True,
-                      example=['0', '1'])
 
     # Command line mandatory arguments
     parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
@@ -266,6 +261,14 @@ if __name__ == "__main__":
                       example=['t1', 't2'])
 
     # Optional arguments section
+    parser.usage.addSection("\nOPTIONAL ARGUMENTS")
+    parser.add_option(name="-g",
+                      type_value="multiple_choice",
+                      description="0: use the command line to crop, 1: use the GUI to crop",
+                      mandatory=True,
+                      example=['0', '1'],
+                      default_value='0')
+
     parser.add_option(name="-v",
                       type_value="multiple_choice",
                       description="1: display on, 0: display off (default)",
@@ -334,7 +337,8 @@ if __name__ == "__main__":
 
     # assigning variables to arguments
     input_filename = arguments["-i"]
-    exec_choice = bool(int(arguments["-g"]))
+    if "-g" in arguments:
+        exec_choice = bool(int(arguments["-g"]))
     if exec_choice:
         cropwithgui(arguments)
     else:

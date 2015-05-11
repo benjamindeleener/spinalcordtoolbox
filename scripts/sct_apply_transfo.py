@@ -195,9 +195,9 @@ def main():
     if isLastAffine:
         sct.printv('WARNING: the resulting image could have wrong apparent results. You should use an affine transformation as last transformation...',1,'warning')
     elif crop_reference == 1:
-        sct.run('isct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field+' -b 0')
+        sct.run('sct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field+' -b 0')
     elif crop_reference == 2:
-        sct.run('isct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field)
+        sct.run('sct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field)
 
     # display elapsed time
     sct.printv('\nDone! To view results, type:', verbose)
