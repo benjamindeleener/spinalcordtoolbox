@@ -55,20 +55,20 @@ class LineBuilder:
 
 
 class ImageCropper:
-    def __init__(self, input_file):
+    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=False, mesh=None, rm_tmp_files=1, verbose=1):
         self.input_filename = input_file
-        self.output_filename = None
-        self.mask = None
-        self.start = None
-        self.end = None
-        self.dim = None
-        self.shift = None
-        self.background = None
-        self.bmax = False
-        self.ref = False
-        self.mesh = None
-        self.rm_tmp_files = 1
-        self.verbose = 1
+        self.output_filename = output_file
+        self.mask = mask
+        self.start = start
+        self.end = end
+        self.dim = dim
+        self.shift = shift
+        self.background = background
+        self.bmax = bmax
+        self.ref = ref
+        self.mesh = mesh
+        self.rm_tmp_files = rm_tmp_files
+        self.verbose = verbose
 
     def crop(self):
 
@@ -101,8 +101,8 @@ class ImageCropper:
         sct.run(cmd, verb)
 
         # Complete message
-        sct.printv('\nDone! To view results, type:', self.verb)
-        sct.printv("fslview "+self.output_filename+" &\n", self.verb, 'info')
+        sct.printv('\nDone! To view results, type:', self.verbose)
+        sct.printv("fslview "+self.output_filename+" &\n", self.verbose, 'info')
 
     # shows the gui to crop the image
     def crop_gui(self):
@@ -244,7 +244,8 @@ if __name__ == "__main__":
                       type_value="multiple_choice",
                       description="1: use the GUI to crop, 0: use the command line to crop",
                       mandatory=False,
-                      example=['0', '1'])
+                      example=['0', '1'],
+                      default_value='0')
 
     # Command line mandatory arguments
     parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
