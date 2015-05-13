@@ -14,8 +14,6 @@
 from msct_parser import Parser
 import sys
 import os
-import commands
-import getopt
 import math
 import scipy
 import matplotlib.pyplot as plt
@@ -55,7 +53,7 @@ class LineBuilder:
 
 
 class ImageCropper:
-    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=False, mesh=None, rm_tmp_files=1, verbose=1):
+    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=None, mesh=None, rm_tmp_files=1, verbose=1):
         self.input_filename = input_file
         self.output_filename = output_file
         self.mask = mask
@@ -69,36 +67,37 @@ class ImageCropper:
         self.mesh = mesh
         self.rm_tmp_files = rm_tmp_files
         self.verbose = verbose
+        self.cmd = None
 
     def crop(self):
 
         # create command line
-        cmd = "isct_crop_image" + " -i " + self.input_filename + " -o " + self.output_filename
+        self.cmd = "isct_crop_image" + " -i " + self.input_filename + " -o " + self.output_filename
         # Handling optional arguments
         if self.mask is not None:
-            cmd += " -m " + self.mask
+            self.cmd += " -m " + self.mask
         if self.start is not None:
-            cmd += " -start " + ','.join(map(str, self.start))
+            self.cmd += " -start " + ','.join(map(str, self.start))
         if self.end is not None:
-            cmd += " -end " + ','.join(map(str, self.end))
+            self.cmd += " -end " + ','.join(map(str, self.end))
         if self.dim is not None:
-            cmd += " -dim " + ','.join(map(str, self.dim))
+            self.cmd += " -dim " + ','.join(map(str, self.dim))
         if self.shift is not None:
-            cmd += " -shift " + ','.join(map(str, self.shift))
+            self.cmd += " -shift " + ','.join(map(str, self.shift))
         if self.background is not None:
-            cmd += " -b " + str(self.background)
+            self.cmd += " -b " + str(self.background)
         if self.bmax is True:
-            cmd += " -bmax"
-        if self.ref is True:
-            cmd += " -ref"
+            self.cmd += " -bmax"
+        if self.ref is not None:
+            self.cmd += " -ref " + self.ref
         if self.mesh is not None:
-            cmd += " -mesh " + self.mesh
+            self.cmd += " -mesh " + self.mesh
 
         verb = 0
         if self.verbose == 1:
             verb = 2
         # Run command line
-        sct.run(cmd, verb)
+        sct.run(self.cmd, verb)
 
         # Complete message
         sct.printv('\nDone! To view results, type:', self.verbose)
@@ -311,9 +310,10 @@ if __name__ == "__main__":
                       description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
                       mandatory=False)
     parser.add_option(name="-ref",
-                      type_value=None,
+                      type_value="file",
                       description="crop input image based on reference image (works only for 3D images)",
-                      mandatory=False)
+                      mandatory=False,
+                      example="ref.nii.gz")
     parser.add_option(name="-mesh",
                       type_value="file",
                       description="mesh to crop",
