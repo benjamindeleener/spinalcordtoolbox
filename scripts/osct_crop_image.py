@@ -22,6 +22,7 @@ import nibabel
 import time
 from sct_orientation import set_orientation
 import sct_utils as sct
+from msct_image import Image
 
 
 class LineBuilder:
@@ -53,7 +54,7 @@ class LineBuilder:
 
 
 class ImageCropper:
-    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=None, mesh=None, rm_tmp_files=1, verbose=1):
+    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=None, mesh=None, rm_tmp_files=1, verbose=1, rm_output_file=0):
         self.input_filename = input_file
         self.output_filename = output_file
         self.mask = mask
@@ -68,6 +69,8 @@ class ImageCropper:
         self.rm_tmp_files = rm_tmp_files
         self.verbose = verbose
         self.cmd = None
+        self.result = None
+        self.rm_output_file = rm_output_file
 
     def crop(self):
 
@@ -99,12 +102,24 @@ class ImageCropper:
         # Run command line
         sct.run(self.cmd, verb)
 
-        # Complete message
-        sct.printv('\nDone! To view results, type:', self.verbose)
-        sct.printv("fslview "+self.output_filename+" &\n", self.verbose, 'info')
+        self.result = Image.loadFromPath(self.output_filename, 0)
+
+        # removes the output file created by the script if it is not needed
+        if self.rm_output_file:
+            try:
+                os.remove(self.output_filename)
+            except OSError:
+                sct.printv("WARNING : Couldn't remove output file. Either it is opened elsewhere or "
+                           "it doesn't exist.", 0, 'warning')
+        else:
+            # Complete message
+            sct.printv('\nDone! To view results, type:', self.verbose)
+            sct.printv("fslview "+self.output_filename+" &\n", self.verbose, 'info')
+
+        return self.result
 
     # shows the gui to crop the image
-    def crop_gui(self):
+    def crop_with_gui(self):
         # Initialization
         fname_data = self.input_filename
         suffix_out = '_crop'
@@ -318,12 +333,19 @@ if __name__ == "__main__":
                       type_value="file",
                       description="mesh to crop",
                       mandatory=False)
+    parser.add_option(name="-rof",
+                      type_value="multiple_choice",
+                      description="remove output file created when cropping",
+                      mandatory=False,
+                      default_value='0',
+                      example=['0', '1'])
 
     # Fetching script arguments
     arguments = parser.parse(sys.argv[1:])
 
     # assigning variables to arguments
     input_filename = arguments["-i"]
+    exec_choice = 0
     if "-g" in arguments:
         exec_choice = bool(int(arguments["-g"]))
 
@@ -335,7 +357,7 @@ if __name__ == "__main__":
         if "-v" in arguments:
             cropper.verbose = int(arguments["-v"])
 
-        cropper.crop_gui()
+        cropper.crop_with_gui()
 
     else:
         if "-o" in arguments:
