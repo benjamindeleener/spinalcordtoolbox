@@ -53,7 +53,7 @@ class LineBuilder:
         self.line.figure.canvas.draw()
 
 
-class ImageCropper:
+class ImageCropper(object):
     def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=None, mesh=None, rm_tmp_files=1, verbose=1, rm_output_file=0):
         self.input_filename = input_file
         self.output_filename = output_file
@@ -102,7 +102,7 @@ class ImageCropper:
         # Run command line
         sct.run(self.cmd, verb)
 
-        self.result = Image.loadFromPath(self.output_filename, 0)
+        self.result = Image(self.output_filename)
 
         # removes the output file created by the script if it is not needed
         if self.rm_output_file:
@@ -128,29 +128,6 @@ class ImageCropper:
 
         # for faster processing, all outputs are in NIFTI
         fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '
-
-        # Parameters for debug mode
-        # if param.debug:
-        #     print '\n*** WARNING: DEBUG MODE ON ***\n'
-        #     fname_data = path_sct+'/testing/data/errsm_23/t2/t2.nii.gz'
-        #     remove_temp_files = 0
-        # else:
-        #     # Check input parameters
-        #     try:
-        #         opts, args = getopt.getopt(sys.argv[1:],'hi:r:v:')
-        #     except getopt.GetoptError:
-        #         usage()
-        #     if not opts:
-        #         usage()
-        #     for opt, arg in opts:
-        #         if opt == '-h':
-        #             usage()
-        #         elif opt in ('-i'):
-        #             fname_data = arg
-        #         elif opt in ('-r'):
-        #             remove_temp_files = int(arg)
-        #         elif opt in ('-v'):
-        #             verbose = int(arg)
 
         # Check file existence
         sct.printv('\nCheck file existence...', verbose)
@@ -242,6 +219,8 @@ class ImageCropper:
         print '\nDone! To view results, type:'
         print 'fslview '+path_out+file_out+ext_out+' &'
         print
+
+
 if __name__ == "__main__":
 
     # Initialize parser

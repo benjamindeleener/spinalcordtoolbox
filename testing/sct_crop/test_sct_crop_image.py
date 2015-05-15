@@ -9,7 +9,7 @@ import nibabel
 from osct_crop_image import ImageCropper
 
 
-class MyTestCase(unittest.TestCase):
+class TestCropImage(unittest.TestCase):
     def test_star_end(self):
         # init crop object
         original_image = "test_files/t2.nii.gz"
