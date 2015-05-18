@@ -327,5 +327,6 @@ if __name__ == "__main__":
     if "-v" in arguments:
         mask.verbose = arguments["-v"]
 
+    mask.create_mask()
 
 
