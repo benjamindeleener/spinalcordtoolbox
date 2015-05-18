@@ -218,14 +218,19 @@ class Mask(object):
 
         # duplicate volume (assumes input file is nifti)
         sct.run('cp '+fname+' line.nii', self.verbose)
-
         # set all voxels to zero
         sct.run('isct_c3d line.nii -scale 0 -o line.nii', self.verbose)
-
         # loop across z and create a voxel at a given XY coordinate
+        cmd = 'sct_label_utils -i line.nii -o line.nii -t add -x '
+        # for iz in range(nz):
+        #     sct.run('sct_label_utils -i line.nii -o line.nii -t add -x '+str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1', self.verbose)
         for iz in range(nz):
-            sct.run('sct_label_utils -i line.nii -o line.nii -t add -x '+str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1', self.verbose)
+            if iz == nz-1:
+                cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1'
+            else:
+                cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1:'
 
+        sct.run(cmd, self.verbose)
         return 'line.nii'
 
     # create_mask2d
