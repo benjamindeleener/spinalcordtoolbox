@@ -243,7 +243,7 @@ if __name__ == "__main__":
     # Command line mandatory arguments
     parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
     parser.add_option(name="-o",
-                      type_value="file",
+                      type_value="file_output",
                       description="output image. This option is REQUIRED for the command line execution",
                       mandatory=False,
                       example=['t1', 't2'])
@@ -318,6 +318,11 @@ if __name__ == "__main__":
                       mandatory=False,
                       default_value='0',
                       example=['0', '1'])
+    parser.add_option(name="-bzmax",
+                      type_value=None,
+                      description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
+                      deprecated_by="-bmax",
+                      mandatory=False)
 
     # Fetching script arguments
     arguments = parser.parse(sys.argv[1:])
