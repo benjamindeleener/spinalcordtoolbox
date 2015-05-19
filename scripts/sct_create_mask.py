@@ -249,8 +249,6 @@ def create_line(fname, coord, nz):
     # set all voxels to zero
     sct.run('isct_c3d line.nii -scale 0 -o line.nii', param.verbose)
     cmd = 'sct_label_utils -i line.nii -o line.nii -t add -x '
-    # for iz in range(nz):
-    #     sct.run('sct_label_utils -i line.nii -o line.nii -t add -x '+str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1', param.verbose)
     for iz in range(nz):
         if iz == nz-1:
             cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1'
