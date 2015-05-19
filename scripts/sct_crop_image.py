@@ -70,7 +70,7 @@ def cropwithcommandline(arguments):
     else:
         print "An output file needs to be specified using the command line"
         sys.exit(2)
-
+    print "calling command line\n"
     cmd = "sct_crop_image" + " -i " + in_filename + " -o " + output_filename
 
     # Handling optional arguments
@@ -89,9 +89,11 @@ def cropwithcommandline(arguments):
     if "-b" in arguments:
         cmd += " -b " + str(arguments["-b"])
     if "-bmax" in arguments:
-        cmd += " -bmax"
+        cmd += " -bmax "
+    if "-bzmax" in arguments:
+        cmd += " -bmax "
     if "-ref" in arguments:
-        cmd += " -ref"
+        cmd += " -ref "
     if "-mesh" in arguments:
         cmd += " -mesh " + arguments["-mesh"]
 
@@ -275,7 +277,7 @@ if __name__ == "__main__":
     # Command line mandatory arguments
     parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
     parser.add_option(name="-o",
-                      type_value="file",
+                      type_value="file_output",
                       description="output image. This option is REQUIRED for the command line execution",
                       mandatory=False,
                       example=['t1', 't2'])
@@ -319,6 +321,10 @@ if __name__ == "__main__":
                       description="replace voxels outside cropping region with background value",
                       mandatory=False)
     parser.add_option(name="-bmax",
+                      type_value=None,
+                      description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
+                      mandatory=False)
+    parser.add_option(name="-bzmax",
                       type_value=None,
                       description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
                       mandatory=False)
