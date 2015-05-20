@@ -133,6 +133,31 @@ class TestCropImage(unittest.TestCase):
         # assert image contents
         self.assertEqual(result, expected, "crop image : reference cropping test")
 
+    def test_bzmax_deprecated(self):
+        # init crop object
+        original_image = "test_files/t2_seg.nii.gz"
+        out_file = "bzmax.nii.gz"
+        gold_file = "bzmax_gold.nii.gz"
+
+        # Creates temp files if not present
+        open(out_file, "w+").close()
+        open(gold_file, "w+").close()
+
+        # testing start and end parameters
+        start_end_cropper = ImageCropper(input_file=original_image, output_file=out_file, bmax=True, verbose=0)
+        # produces result file
+        start_end_cropper.crop()
+        # produces golden file
+        sct.run("isct_crop_image -i "+original_image+" -o "+gold_file+" -bzmax", 0)
+        # get image contents
+        result = nibabel.load(out_file).get_data().data
+        expected = nibabel.load(gold_file).get_data().data
+        # remove temporary files
+        os.remove(out_file)
+        os.remove(gold_file)
+        # assert image contents
+        self.assertEqual(result, expected, "crop image : maximum cropping test")
+
 
 if __name__ == '__main__':
     unittest.main()
