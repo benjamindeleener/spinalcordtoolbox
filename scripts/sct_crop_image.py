@@ -71,7 +71,7 @@ def cropwithcommandline(arguments):
         print "An output file needs to be specified using the command line"
         sys.exit(2)
     print "calling command line\n"
-    cmd = "sct_crop_image" + " -i " + in_filename + " -o " + output_filename
+    cmd = "isct_crop_image" + " -i " + in_filename + " -o " + output_filename
 
     # Handling optional arguments
     if "-v" in arguments:
@@ -90,15 +90,13 @@ def cropwithcommandline(arguments):
         cmd += " -b " + str(arguments["-b"])
     if "-bmax" in arguments:
         cmd += " -bmax "
-    if "-bzmax" in arguments:
-        cmd += " -bmax "
     if "-ref" in arguments:
         cmd += " -ref "
     if "-mesh" in arguments:
         cmd += " -mesh " + arguments["-mesh"]
 
     # Run command line
-    sct.run(cmd, 2)
+    sct.run(cmd,2)
 
     # Complete message
     sct.printv('\nDone! To view results, type:', arguments["-v"])
@@ -327,6 +325,7 @@ if __name__ == "__main__":
     parser.add_option(name="-bzmax",
                       type_value=None,
                       description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
+                      deprecated_by="-bmax",
                       mandatory=False)
     parser.add_option(name="-ref",
                       type_value=None,
