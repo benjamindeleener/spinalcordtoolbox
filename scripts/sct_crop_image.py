@@ -91,7 +91,7 @@ def cropwithcommandline(arguments):
     if "-bmax" in arguments:
         cmd += " -bmax "
     if "-ref" in arguments:
-        cmd += " -ref "
+        cmd += " -ref " + arguments["-ref"]
     if "-mesh" in arguments:
         cmd += " -mesh " + arguments["-mesh"]
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     # Mandatory arguments
     parser.usage.set_description('Tools to crop an image. Either through command line or GUI')
     parser.add_option(name="-i",
-                      type_value="file",
+                      type_value="image_nifti",
                       description="input image.",
                       mandatory=True,
                       example="t2.nii.gz")
@@ -328,7 +328,7 @@ if __name__ == "__main__":
                       deprecated_by="-bmax",
                       mandatory=False)
     parser.add_option(name="-ref",
-                      type_value=None,
+                      type_value="file",
                       description="crop input image based on reference image (works only for 3D images)",
                       mandatory=False)
     parser.add_option(name="-mesh",
