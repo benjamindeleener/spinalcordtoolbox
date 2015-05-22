@@ -234,32 +234,35 @@ def test_function(script_name):
     if script_name == 'test_debug':
         return test_debug()  # JULIEN
     else:
+
         # build script name
         fname_log = script_name + ".log"
-        tmp_script_name = script_name
         result_folder = "results_"+script_name
         script_name = "test_"+script_name
 
         sct.create_folder(result_folder)
         os.chdir(result_folder)
-
-        # display script name
-        print_line('Checking '+script_name)
-        # import function as a module
-        script_tested = importlib.import_module(script_name)
-        # test function
-        status, output = script_tested.test(param.path_data)
-        # manage status
-        if status == 0:
-            print_ok()
-        else:
-            print_fail()
-            print output
+        try:
+            # display script name
+            print_line('Checking '+script_name)
+            # import function as a module
+            script_tested = importlib.import_module(script_name)
+            # test function
+            status, output = script_tested.test(param.path_data)
+            # returning script_name to its original name
+            # manage status
+            if status == 0:
+                print_ok()
+            else:
+                print_fail()
+                print output
             # log file
             write_to_log_file(fname_log, output, 'w')
-
-            # go back to parent folder
-            os.chdir('..')
+        except:
+            pass
+        # go back to parent folder
+        os.chdir('..')
+        # end while loop
 
         # return
         return status

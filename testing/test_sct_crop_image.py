@@ -22,7 +22,7 @@ def test(data_path):
     file_data = ['t2.nii.gz','t2_seg.nii.gz']
 
     # test normal crop
-    cmd = 'sct_crop_image -i ' + data_path + folder_data + file_data[0] \
+    cmd = 'isct_crop_image -i ' + data_path + folder_data + file_data[0] \
           + ' -o cropped_normal.nii.gz -dim 1 -start 10 -end 50'
 
     status, output = sct.run(cmd, 0)
