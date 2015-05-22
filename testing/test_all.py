@@ -234,7 +234,6 @@ def test_function(script_name):
     if script_name == 'test_debug':
         return test_debug()  # JULIEN
     else:
-
         # build script name
         fname_log = script_name + ".log"
         result_folder = "results_"+script_name
