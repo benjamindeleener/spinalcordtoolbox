@@ -237,7 +237,6 @@ def test_function(script_name):
         fname_log = script_name + ".log"
         result_folder = "results_"+script_name
         script_name = "test_"+script_name
-
         sct.create_folder(result_folder)
 
         os.chdir(result_folder)
