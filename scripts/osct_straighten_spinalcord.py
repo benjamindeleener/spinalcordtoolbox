@@ -309,9 +309,9 @@ class SpinalCordStraightener(object):
 
             # remove padding for straight labels
             if crop == 1:
-                ImageCropper(input_file="tmp.landmarks_straight.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim=0, bmax=True, verbose=verbose).crop()
-                ImageCropper(input_file="tmp.landmarks_straight_crop.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim=1, bmax=True, verbose=verbose).crop()
-                ImageCropper(input_file="tmp.landmarks_straight_crop.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim=2, bmax=True, verbose=verbose).crop()
+                ImageCropper(input_file="tmp.landmarks_straight.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim="0", bmax=True, verbose=verbose).crop()
+                ImageCropper(input_file="tmp.landmarks_straight_crop.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim="1", bmax=True, verbose=verbose).crop()
+                ImageCropper(input_file="tmp.landmarks_straight_crop.nii.gz", output_file="tmp.landmarks_straight_crop.nii.gz", dim="2", bmax=True, verbose=verbose).crop()
                 pass
             else:
                 sct.run('cp tmp.landmarks_straight.nii.gz tmp.landmarks_straight_crop.nii.gz', verbose)

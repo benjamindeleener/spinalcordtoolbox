@@ -1,6 +1,9 @@
 __author__ = 'olcoma'
 
+import sys
+sys.path.append("../../scripts")
 import unittest
+import shutil
 import os
 import nibabel
 from osct_straighten_spinalcord import SpinalCordStraightener
@@ -19,15 +22,17 @@ class TestStraightenSpinalCord(unittest.TestCase):
     STRAIGHT_FILE = 't2_straight.nii.gz'
 
     def setUp(self):
-        pass
+        os.mkdir("ref")
+        os.mkdir("gold")
 
     def tearDown(self):
-        pass
+        shutil.rmtree("ref")
+        shutil.rmtree("gold")
 
     def test_default(self):
         os.chdir("ref")
         try:
-            SpinalCordStraightener(input_filename="../"+self.ORIGINAL_FILE, centerline_filename="../"+self.CENTERLINE_FILE)
+            SpinalCordStraightener(input_filename="../"+self.ORIGINAL_FILE, centerline_filename="../"+self.CENTERLINE_FILE, verbose=1).straighten()
         except:
             pass
         os.chdir("../gold")
