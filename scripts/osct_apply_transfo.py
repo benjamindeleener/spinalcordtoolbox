@@ -13,7 +13,7 @@ from osct_crop_image import ImageCropper
 class Transform:
     def __init__(self,input_filename, warp_list, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
         self.input_filename = input_filename
-        self.warp_list = ','.join(map(str, warp_list))
+        self.warp_list = warp_list
         self.output_filename = output_filename
         self.interp = interp
         self.source_reg = source_reg
