@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
 # Authors: Benjamin Leener, Julien Cohen-Adad, Olivier Comtois
-# Modified: 2014-05-16
+# Modified: 2015-05-16
 #
 # About the license: see the file LICENSE.TXT
 #########################################################################################
@@ -14,8 +14,6 @@
 from msct_parser import Parser
 import sys
 import os
-import commands
-import getopt
 import math
 import scipy
 import matplotlib.pyplot as plt
@@ -24,14 +22,7 @@ import nibabel
 import time
 from sct_orientation import set_orientation
 import sct_utils as sct
-
-
-class Param:
-    # The constructor
-    def __init__(self):
-        self.debug = 0
-        self.verbose = 1
-        self.remove_temp_files = 1
+from msct_image import Image
 
 
 class LineBuilder:
@@ -47,7 +38,7 @@ class LineBuilder:
             # if user clicked outside the axis, ignore
             return
         if event.button == 2 or event.button == 3:
-            # if right bu tton, remove last point
+            # if right button, remove last point
             del self.xs[-1]
             del self.ys[-1]
         if len(self.xs) >= 2:
@@ -62,182 +53,173 @@ class LineBuilder:
         self.line.figure.canvas.draw()
 
 
-def cropwithcommandline(arguments):
+class ImageCropper(object):
+    def __init__(self, input_file, output_file=None, mask=None, start=None, end=None, dim=None, shift=None, background=None, bmax=False, ref=None, mesh=None, rm_tmp_files=1, verbose=1, rm_output_file=0):
+        self.input_filename = input_file
+        self.output_filename = output_file
+        self.mask = mask
+        self.start = start
+        self.end = end
+        self.dim = dim
+        self.shift = shift
+        self.background = background
+        self.bmax = bmax
+        self.ref = ref
+        self.mesh = mesh
+        self.rm_tmp_files = rm_tmp_files
+        self.verbose = verbose
+        self.cmd = None
+        self.result = None
+        self.rm_output_file = rm_output_file
 
-    in_filename = arguments["-i"]
-    if "-o" in arguments:
-        output_filename = arguments["-o"]
-    else:
-        print "An output file needs to be specified using the command line"
-        sys.exit(2)
-    print "calling command line\n"
-    cmd = "isct_crop_image" + " -i " + in_filename + " -o " + output_filename
+    def crop(self):
 
-    # Handling optional arguments
-    if "-v" in arguments:
-        verbose = bool(arguments["-v"])
-    if "-m" in arguments:
-        cmd += " -m " + arguments["-m"]
-    if "-start" in arguments:
-        cmd += " -start " + ','.join(map(str, arguments["-start"]))
-    if "-end" in arguments:
-        cmd += " -end " + ','.join(map(str, arguments["-end"]))
-    if "-dim" in arguments:
-        cmd += " -dim " + ','.join(map(str, arguments["-dim"]))
-    if "-shift" in arguments:
-        cmd += " -shift " + ','.join(map(str, arguments["-shift"]))
-    if "-b" in arguments:
-        cmd += " -b " + str(arguments["-b"])
-    if "-bmax" in arguments:
-        cmd += " -bmax "
-    if "-ref" in arguments:
-        cmd += " -ref " + arguments["-ref"]
-    if "-mesh" in arguments:
-        cmd += " -mesh " + arguments["-mesh"]
+        # create command line
+        self.cmd = "isct_crop_image" + " -i " + self.input_filename + " -o " + self.output_filename
+        # Handling optional arguments
+        if self.mask is not None:
+            self.cmd += " -m " + self.mask
+        if self.start is not None:
+            self.cmd += " -start " + ','.join(map(str, self.start))
+        if self.end is not None:
+            self.cmd += " -end " + ','.join(map(str, self.end))
+        if self.dim is not None:
+            self.cmd += " -dim " + ','.join(map(str, self.dim))
+        if self.shift is not None:
+            self.cmd += " -shift " + ','.join(map(str, self.shift))
+        if self.background is not None:
+            self.cmd += " -b " + str(self.background)
+        if self.bmax is True:
+            self.cmd += " -bmax"
+        if self.ref is not None:
+            self.cmd += " -ref " + self.ref
+        if self.mesh is not None:
+            self.cmd += " -mesh " + self.mesh
 
-    # Run command line
-    sct.run(cmd,2)
+        verb = 0
+        if self.verbose == 1:
+            verb = 2
+        # Run command line
+        sct.run(self.cmd, verb)
 
-    # Complete message
-    sct.printv('\nDone! To view results, type:', arguments["-v"])
-    sct.printv("fslview "+output_filename+" &\n", arguments["-v"], 'info')
+        self.result = Image(self.output_filename)
 
-def cropwithgui(arguments):
+        # removes the output file created by the script if it is not needed
+        if self.rm_output_file:
+            try:
+                os.remove(self.output_filename)
+            except OSError:
+                sct.printv("WARNING : Couldn't remove output file. Either it is opened elsewhere or "
+                           "it doesn't exist.", 0, 'warning')
+        else:
+            # Complete message
+            sct.printv('\nDone! To view results, type:', self.verbose)
+            sct.printv("fslview "+self.output_filename+" &\n", self.verbose, 'info')
 
-    param = Param()
-    param_default = Param()
+        return self.result
 
-    # Initialization
-    fname_data = ''
-    suffix_out = '_crop'
-    remove_temp_files = param.remove_temp_files
-    verbose = param.verbose
+    # shows the gui to crop the image
+    def crop_with_gui(self):
+        # Initialization
+        fname_data = self.input_filename
+        suffix_out = '_crop'
+        remove_temp_files = self.rm_tmp_files
+        verbose = self.verbose
 
-    # for faster processing, all outputs are in NIFTI
-    fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '
-    remove_temp_files = param.remove_temp_files
+        # for faster processing, all outputs are in NIFTI
+        fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '
 
-    # Parameters for debug mode
-    # if param.debug:
-    #     print '\n*** WARNING: DEBUG MODE ON ***\n'
-    #     fname_data = path_sct+'/testing/data/errsm_23/t2/t2.nii.gz'
-    #     remove_temp_files = 0
-    # else:
-    #     # Check input parameters
-    #     try:
-    #         opts, args = getopt.getopt(sys.argv[1:],'hi:r:v:')
-    #     except getopt.GetoptError:
-    #         usage()
-    #     if not opts:
-    #         usage()
-    #     for opt, arg in opts:
-    #         if opt == '-h':
-    #             usage()
-    #         elif opt in ('-i'):
-    #             fname_data = arg
-    #         elif opt in ('-r'):
-    #             remove_temp_files = int(arg)
-    #         elif opt in ('-v'):
-    #             verbose = int(arg)
+        # Check file existence
+        sct.printv('\nCheck file existence...', verbose)
+        sct.check_file_exist(fname_data)
 
-    # Handle arguments
-    fname_data = arguments["-i"]
-    if "-r" in arguments:
-        remove_temp_files = int(arguments["-r"])
-    if "-v" in arguments:
-        verbose = int(arguments["-v"])
+        # Get dimensions of data
+        sct.printv('\nGet dimensions of data...', verbose)
+        nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension(fname_data)
+        sct.printv('.. '+str(nx)+' x '+str(ny)+' x '+str(nz), verbose)
+        # check if 4D data
+        if not nt == 1:
+            sct.printv('\nERROR in '+os.path.basename(__file__)+': Data should be 3D.\n', 1, 'error')
+            sys.exit(2)
 
+        # print arguments
+        print '\nCheck parameters:'
+        print '  data ................... '+fname_data
+        print
 
-    # Check file existence
-    sct.printv('\nCheck file existence...', verbose)
-    sct.check_file_exist(fname_data)
+        # Extract path/file/extension
+        path_data, file_data, ext_data = sct.extract_fname(fname_data)
+        path_out, file_out, ext_out = '', file_data+suffix_out, ext_data
 
-    # Get dimensions of data
-    sct.printv('\nGet dimensions of data...', verbose)
-    nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension(fname_data)
-    sct.printv('.. '+str(nx)+' x '+str(ny)+' x '+str(nz), verbose)
-    # check if 4D data
-    if not nt == 1:
-        sct.printv('\nERROR in '+os.path.basename(__file__)+': Data should be 3D.\n', 1, 'error')
-        sys.exit(2)
+        # create temporary folder
+        path_tmp = 'tmp.'+time.strftime("%y%m%d%H%M%S")+'/'
+        sct.run('mkdir '+path_tmp)
 
-    # print arguments
-    print '\nCheck parameters:'
-    print '  data ................... '+fname_data
-    print
+        # copy files into tmp folder
+        sct.run('isct_c3d '+fname_data+' -o '+path_tmp+'data.nii')
 
-    # Extract path/file/extension
-    path_data, file_data, ext_data = sct.extract_fname(fname_data)
-    path_out, file_out, ext_out = '', file_data+suffix_out, ext_data
+        # go to tmp folder
+        os.chdir(path_tmp)
 
-    # create temporary folder
-    path_tmp = 'tmp.'+time.strftime("%y%m%d%H%M%S")+'/'
-    sct.run('mkdir '+path_tmp)
+        # change orientation
+        sct.printv('\nChange orientation to RPI...', verbose)
+        set_orientation('data.nii', 'RPI', 'data_rpi.nii')
 
-    # copy files into tmp folder
-    sct.run('isct_c3d '+fname_data+' -o '+path_tmp+'data.nii')
+        # get image of medial slab
+        sct.printv('\nGet image of medial slab...', verbose)
+        image_array = nibabel.load('data_rpi.nii').get_data()
+        nx, ny, nz = image_array.shape
+        scipy.misc.imsave('image.jpg', image_array[math.floor(nx/2), :, :])
 
-    # go to tmp folder
-    os.chdir(path_tmp)
+        # Display the image
+        sct.printv('\nDisplay image and get cropping region...', verbose)
+        fig = plt.figure()
+        # fig = plt.gcf()
+        # ax = plt.gca()
+        ax = fig.add_subplot(111)
+        img = mpimg.imread("image.jpg")
+        implot = ax.imshow(img.T)
+        implot.set_cmap('gray')
+        plt.gca().invert_yaxis()
+        # mouse callback
+        ax.set_title('Left click on the top and bottom of your cropping field.\n Right click to remove last point.\n Close window when your done.')
+        line, = ax.plot([], [], 'ro')  # empty line
+        cropping_coordinates = LineBuilder(line)
+        plt.show()
+        # disconnect callback
+        # fig.canvas.mpl_disconnect(line)
 
-    # change orientation
-    sct.printv('\nChange orientation to RPI...', verbose)
-    set_orientation('data.nii', 'RPI', 'data_rpi.nii')
+        # check if user clicked two times
+        if len(cropping_coordinates.xs) != 2:
+            sct.printv('\nERROR: You have to select two points. Exit program.\n', 1, 'error')
+            sys.exit(2)
 
-    # get image of medial slab
-    sct.printv('\nGet image of medial slab...', verbose)
-    image_array = nibabel.load('data_rpi.nii').get_data()
-    nx, ny, nz = image_array.shape
-    scipy.misc.imsave('image.jpg', image_array[math.floor(nx/2), :, :])
+        # convert coordinates to integer
+        zcrop = [int(i) for i in cropping_coordinates.ys]
 
-    # Display the image
-    sct.printv('\nDisplay image and get cropping region...', verbose)
-    fig = plt.figure()
-    # fig = plt.gcf()
-    # ax = plt.gca()
-    ax = fig.add_subplot(111)
-    img = mpimg.imread("image.jpg")
-    implot = ax.imshow(img.T)
-    implot.set_cmap('gray')
-    plt.gca().invert_yaxis()
-    # mouse callback
-    ax.set_title('Left click on the top and bottom of your cropping field.\n Right click to remove last point.\n Close window when your done.')
-    line, = ax.plot([], [], 'ro')  # empty line
-    cropping_coordinates = LineBuilder(line)
-    plt.show()
-    # disconnect callback
-    # fig.canvas.mpl_disconnect(line)
+        # sort coordinates
+        zcrop.sort()
 
-    # check if user clicked two times
-    if len(cropping_coordinates.xs) != 2:
-        sct.printv('\nERROR: You have to select two points. Exit program.\n', 1, 'error')
-        sys.exit(2)
+        # crop image
+        sct.printv('\nCrop image...', verbose)
+        sct.run(fsloutput+'fslroi data_rpi.nii data_rpi_crop.nii 0 -1 0 -1 '+str(zcrop[0])+' '+str(zcrop[1]-zcrop[0]+1))
 
-    # convert coordinates to integer
-    zcrop = [int(i) for i in cropping_coordinates.ys]
+        # come back to parent folder
+        os.chdir('..')
 
-    # sort coordinates
-    zcrop.sort()
+        sct.printv('\nGenerate output files...', verbose)
+        sct.generate_output_file(path_tmp+'data_rpi_crop.nii', path_out+file_out+ext_out)
 
-    # crop image
-    sct.printv('\nCrop image...', verbose)
-    sct.run(fsloutput+'fslroi data_rpi.nii data_rpi_crop.nii 0 -1 0 -1 '+str(zcrop[0])+' '+str(zcrop[1]-zcrop[0]+1))
+        # Remove temporary files
+        if remove_temp_files == 1:
+            print('\nRemove temporary files...')
+            sct.run('rm -rf '+path_tmp)
 
-    # come back to parent folder
-    os.chdir('..')
+        # to view results
+        print '\nDone! To view results, type:'
+        print 'fslview '+path_out+file_out+ext_out+' &'
+        print
 
-    sct.printv('\nGenerate output files...', verbose)
-    sct.generate_output_file(path_tmp+'data_rpi_crop.nii', path_out+file_out+ext_out)
-
-    # Remove temporary files
-    if remove_temp_files == 1:
-        print('\nRemove temporary files...')
-        sct.run('rm -rf '+path_tmp)
-
-    # to view results
-    print '\nDone! To view results, type:'
-    print 'fslview '+path_out+file_out+ext_out+' &'
-    print
 
 if __name__ == "__main__":
 
@@ -247,19 +229,26 @@ if __name__ == "__main__":
     # Mandatory arguments
     parser.usage.set_description('Tools to crop an image. Either through command line or GUI')
     parser.add_option(name="-i",
-                      type_value="image_nifti",
+                      type_value="file",
                       description="input image.",
                       mandatory=True,
                       example="t2.nii.gz")
-
-    # Optional arguments section
     parser.add_option(name="-g",
                       type_value="multiple_choice",
-                      description="0: use the command line to crop, 1: use the GUI to crop.",
+                      description="1: use the GUI to crop, 0: use the command line to crop",
                       mandatory=False,
                       example=['0', '1'],
                       default_value='0')
 
+    # Command line mandatory arguments
+    parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
+    parser.add_option(name="-o",
+                      type_value="file_output",
+                      description="output image. This option is REQUIRED for the command line execution",
+                      mandatory=False,
+                      example=['t1', 't2'])
+
+    # Optional arguments section
     parser.add_option(name="-v",
                       type_value="multiple_choice",
                       description="1: display on, 0: display off (default)",
@@ -271,14 +260,6 @@ if __name__ == "__main__":
                       type_value=None,
                       description="Displays help",
                       mandatory=False)
-
-    # Command line mandatory arguments
-    parser.usage.addSection("\nCOMMAND LINE RELATED MANDATORY ARGUMENTS")
-    parser.add_option(name="-o",
-                      type_value="file_output",
-                      description="output image. This option is REQUIRED for the command line execution",
-                      mandatory=False,
-                      example=['t1', 't2'])
 
     # GUI optional argument
     parser.usage.addSection("\nGUI RELATED OPTIONAL ARGUMENTS")
@@ -322,18 +303,25 @@ if __name__ == "__main__":
                       type_value=None,
                       description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
                       mandatory=False)
+    parser.add_option(name="-ref",
+                      type_value="file",
+                      description="crop input image based on reference image (works only for 3D images)",
+                      mandatory=False,
+                      example="ref.nii.gz")
+    parser.add_option(name="-mesh",
+                      type_value="file",
+                      description="mesh to crop",
+                      mandatory=False)
+    parser.add_option(name="-rof",
+                      type_value="multiple_choice",
+                      description="remove output file created when cropping",
+                      mandatory=False,
+                      default_value='0',
+                      example=['0', '1'])
     parser.add_option(name="-bzmax",
                       type_value=None,
                       description="maximize the cropping of the image (provide -dim if you want to specify the dimensions)",
                       deprecated_by="-bmax",
-                      mandatory=False)
-    parser.add_option(name="-ref",
-                      type_value="file",
-                      description="crop input image based on reference image (works only for 3D images)",
-                      mandatory=False)
-    parser.add_option(name="-mesh",
-                      type_value="file",
-                      description="mesh to crop",
                       mandatory=False)
 
     # Fetching script arguments
@@ -341,16 +329,44 @@ if __name__ == "__main__":
 
     # assigning variables to arguments
     input_filename = arguments["-i"]
+    exec_choice = 0
     if "-g" in arguments:
         exec_choice = bool(int(arguments["-g"]))
+
+    cropper = ImageCropper(input_filename)
     if exec_choice:
-        cropwithgui(arguments)
+        fname_data = arguments["-i"]
+        if "-r" in arguments:
+            cropper.rm_tmp_files = int(arguments["-r"])
+        if "-v" in arguments:
+            cropper.verbose = int(arguments["-v"])
+
+        cropper.crop_with_gui()
+
     else:
-        cropwithcommandline(arguments)
+        if "-o" in arguments:
+            cropper.output_filename = arguments["-o"]
+        else:
+            print "An output file needs to be specified using the command line"
+            sys.exit(2)
+        # Handling optional arguments
+        if "-m" in arguments:
+            cropper.mask = arguments["-m"]
+        if "-start" in arguments:
+            cropper.start = arguments["-start"]
+        if "-end" in arguments:
+            cropper.end = arguments["-end"]
+        if "-dim" in arguments:
+            cropper.dim = arguments["-dim"]
+        if "-shift" in arguments:
+            cropper.shift = arguments["-shift"]
+        if "-b" in arguments:
+            cropper.background = arguments["-b"]
+        if "-bmax" in arguments:
+            cropper.bmax = True
+        if "-ref" in arguments:
+            cropper.ref = True
+        if "-mesh" in arguments:
+            cropper.mesh = arguments["-mesh"]
 
-    # Building command line to call the executable file
-    # cmd = "sct_crop_image" + " -i " + input_filename + " -o " + output_filename
-
-    # Running the command line
-    # sct.run(cmd, verbose)
-
+        cropper.crop()
