@@ -36,6 +36,7 @@ from scipy import ndimage
 import sct_utils as sct
 from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
+from sct_straighten_spinalcord import SpinalCordStraightener
 
 
 

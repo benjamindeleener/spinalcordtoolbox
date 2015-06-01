@@ -19,13 +19,13 @@ import commands
 import sys
 from msct_parser import Parser
 from sct_label_utils import ProcessLabels
-from osct_crop_image import ImageCropper
+from sct_crop_image import ImageCropper
 from nibabel import load, Nifti1Image, save
 from numpy import array, asarray, append, insert, linalg, mean, sum, isnan
 from sympy.solvers import solve
 from sympy import Symbol
 from scipy import ndimage
-from osct_apply_transfo import Transform
+from sct_apply_transfo import Transform
 import sct_utils as sct
 from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
@@ -97,7 +97,7 @@ class SpinalCordStraightener(object):
 
         # create temporary folder
         path_tmp = 'tmp.'+time.strftime("%y%m%d%H%M%S")
-        os.mkdir(path_tmp)
+        sct.run('mkdir '+path_tmp, verbose)
 
         # copy files into tmp folder
         sct.run('cp '+fname_anat+' '+path_tmp)
@@ -119,7 +119,7 @@ class SpinalCordStraightener(object):
             sct.printv('.. voxel size:  '+str(px)+'mm x '+str(py)+'mm x '+str(pz)+'mm', verbose)
 
             # smooth centerline
-            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = self.smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
+            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = SpinalCordStraightener.smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
 
             # Get coordinates of landmarks along curved centerline
             #==========================================================================================
@@ -302,7 +302,7 @@ class SpinalCordStraightener(object):
             # Apply rigid transformation
             sct.printv('\nApply rigid transformation to curved landmarks...', verbose)
             #sct.run('sct_apply_transfo -i tmp.landmarks_curved.nii.gz -o tmp.landmarks_curved_rigid.nii.gz -d tmp.landmarks_straight.nii.gz -w tmp.curve2straight_rigid.txt -x nn', verbose)
-            Transform(input_filename="tmp.landmarks_curved.nii.gz", source_reg="tmp.landmarks_curved_rigid.nii.gz", output_filename="tmp.landmarks_straight.nii.gz", warp_list="tmp.curve2straight_rigid.txt", interp="nn", verbose=verbose).apply()
+            Transform(input_filename="tmp.landmarks_curved.nii.gz", source_reg="tmp.landmarks_curved_rigid.nii.gz", output_filename="tmp.landmarks_straight.nii.gz", warp="tmp.curve2straight_rigid.txt", interp="nn", verbose=verbose).apply()
 
             # Estimate b-spline transformation curve --> straight
             sct.printv('\nEstimate b-spline transformation: curve --> straight...', verbose)
@@ -340,14 +340,14 @@ class SpinalCordStraightener(object):
             # Apply transformation to input image
             sct.printv('\nApply transformation to input image...', verbose)
             # sct.run('sct_apply_transfo -i '+file_anat+ext_anat+' -o tmp.anat_rigid_warp.nii.gz -d tmp.landmarks_straight_crop.nii.gz -x '+interpolation_warp+' -w tmp.curve2straight.nii.gz', verbose)
-            Transform(input_filename=str(file_anat+ext_anat), source_reg="tmp.anat_rigid_warp.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp=interpolation_warp, warp_list="tmp.curve2straight.nii.gz", verbose=verbose).apply()
+            Transform(input_filename=str(file_anat+ext_anat), source_reg="tmp.anat_rigid_warp.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp=interpolation_warp, warp="tmp.curve2straight.nii.gz", verbose=verbose).apply()
 
             # compute the error between the straightened centerline/segmentation and the central vertical line.
             # Ideally, the error should be zero.
             # Apply deformation to input image
             print '\nApply transformation to input image...'
             # sct.run('sct_apply_transfo -i '+fname_centerline_orient+' -o tmp.centerline_straight.nii.gz -d tmp.landmarks_straight_crop.nii.gz -x nn -w tmp.curve2straight.nii.gz')
-            Transform(input_filename=fname_centerline_orient, source_reg="tmp.centerline_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp="nn", warp_list="tmp.curve2straight.nii.gz").apply()
+            Transform(input_filename=fname_centerline_orient, source_reg="tmp.centerline_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp="nn", warp="tmp.curve2straight.nii.gz").apply()
             #c = sct.run('sct_crop_image -i tmp.centerline_straight.nii.gz -o tmp.centerline_straight_crop.nii.gz -dim 2 -bzmax')
             from msct_image import Image
             file_centerline_straight = Image('tmp.centerline_straight.nii.gz')
@@ -400,8 +400,8 @@ class SpinalCordStraightener(object):
         sct.printv('\nTo view results, type:', verbose)
         sct.printv('fslview '+fname_straight+' &\n', verbose, 'info')
 
-
-    def smooth_centerline(self, fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
+    @staticmethod
+    def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
         """
         :param fname_centerline: centerline in RPI orientation
         :return: a bunch of useful stuff

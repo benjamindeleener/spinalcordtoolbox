@@ -1,4 +1,18 @@
-__author__ = 'olcoma'
+#!/usr/bin/env python
+#########################################################################################
+#
+# Apply transformations. This function is a wrapper for sct_WarpImageMultiTransform
+#
+# ---------------------------------------------------------------------------------------
+# Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
+# Authors: Julien Cohen-Adad, Olivier Comtois
+# Modified: 2014-07-20
+#
+# About the license: see the file LICENSE.TXT
+#########################################################################################
+
+# TODO: display message at the end
+# TODO: interpolation methods
 
 import sys
 import os
@@ -7,13 +21,13 @@ import commands
 import time
 from msct_parser import Parser
 import sct_utils as sct
-from osct_crop_image import ImageCropper
+from sct_crop_image import ImageCropper
 
 
 class Transform:
-    def __init__(self,input_filename, warp_list, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
+    def __init__(self,input_filename, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
         self.input_filename = input_filename
-        self.warp_list = warp_list
+        self.warp_input = warp
         self.output_filename = output_filename
         self.interp = interp
         self.source_reg = source_reg
@@ -24,7 +38,7 @@ class Transform:
     def apply(self):
         # Initialization
         fname_src = self.input_filename  # source image (moving)
-        fname_warp_list = self.warp_list  # list of warping fields
+        fname_warp_list = self.warp_input  # list of warping fields
         fname_dest = self.output_filename  # destination image (fix)
         fname_src_reg = self.source_reg
         verbose = self.verbose
@@ -47,8 +61,8 @@ class Transform:
         sct.printv('\nParse list of warping fields...', verbose)
         use_inverse = []
         fname_warp_list_invert = []
-        fname_warp_list = fname_warp_list.replace(' ', '')  # remove spaces
-        fname_warp_list = fname_warp_list.split(",")  # parse with comma
+        # fname_warp_list = fname_warp_list.replace(' ', '')  # remove spaces
+        # fname_warp_list = fname_warp_list.split(",")  # parse with comma
         for i in range(len(fname_warp_list)):
             # Check if inverse matrix is specified with '-' at the beginning of file name
             if fname_warp_list[i].find('-') == 0:
@@ -108,7 +122,7 @@ class Transform:
             sct.printv('\nCreate temporary folder...', verbose)
             path_tmp = sct.slash_at_the_end('tmp.'+time.strftime("%y%m%d%H%M%S"), 1)
             # sct.run('mkdir '+path_tmp, verbose)
-            os.mkdir(path_tmp)
+            sct.run('mkdir '+path_tmp, verbose)
 
             # Copying input data to tmp folder
             # NB: cannot use c3d here because c3d cannot convert 4D data.
@@ -189,11 +203,11 @@ if __name__ == "__main__":
                       default_value='0',
                       example=['0','1','2'])
     parser.add_option(name="-o",
-                      type_value="multiple_choice",
+                      type_value="file",
                       description="registered source",
                       mandatory=False,
                       default_value='',
-                      example=['0','1','2'])
+                      example="source.nii.gz")
     parser.add_option(name="-x",
                       type_value="multiple_choice",
                       description="interpolation method",
@@ -207,7 +221,7 @@ if __name__ == "__main__":
     output_filename = arguments["-d"]
     warp_filename = arguments["-w"]
 
-    transform = Transform(input_filename=input_filename, output_filename=output_filename, warp_list=warp_filename)
+    transform = Transform(input_filename=input_filename, output_filename=output_filename, warp=warp_filename)
 
     if "-c" in arguments:
         transform.crop = arguments["-c"]

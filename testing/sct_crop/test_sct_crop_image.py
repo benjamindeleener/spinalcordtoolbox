@@ -6,7 +6,7 @@ import sys
 sys.path.append("../../scripts")
 import sct_utils as sct
 import nibabel
-from osct_crop_image import ImageCropper
+from sct_crop_image import ImageCropper
 
 
 class TestCropImage(unittest.TestCase):

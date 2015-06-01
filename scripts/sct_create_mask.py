@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 #########################################################################################
 #
 # sct_create_mask obect equivalent. Creates a mask along the Z axis

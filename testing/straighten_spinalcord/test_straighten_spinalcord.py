@@ -6,7 +6,7 @@ import unittest
 import shutil
 import os
 import nibabel
-from osct_straighten_spinalcord import SpinalCordStraightener
+from sct_straighten_spinalcord import SpinalCordStraightener
 import sct_utils as sct
 
 class TestStraightenSpinalCord(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestStraightenSpinalCord(unittest.TestCase):
             pass
         os.chdir("../gold")
         try:
-            sct.run("sct_straighten_spinalcord -i ../"+self.ORIGINAL_FILE+" -c ../"+self.CENTERLINE_FILE)
+            sct.run("python ../../../scripts/d_sct_straighten_spinalcord.py -i ../"+self.ORIGINAL_FILE+" -c ../"+self.CENTERLINE_FILE)
         except:
             pass
         os.chdir('..')

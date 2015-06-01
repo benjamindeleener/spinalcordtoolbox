@@ -16,6 +16,7 @@ import time
 import sct_utils as sct
 from sct_process_segmentation import extract_centerline
 from sct_orientation import get_orientation
+from sct_straighten_spinalcord import Transform
 
 # DEFAULT PARAMETERS
 class Param:
