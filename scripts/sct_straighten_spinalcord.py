@@ -19,13 +19,13 @@ import commands
 import sys
 from msct_parser import Parser
 from sct_label_utils import ProcessLabels
-from osct_crop_image import ImageCropper
+from sct_crop_image import ImageCropper
 from nibabel import load, Nifti1Image, save
 from numpy import array, asarray, append, insert, linalg, mean, sum, isnan
 from sympy.solvers import solve
 from sympy import Symbol
 from scipy import ndimage
-from osct_apply_transfo import Transform
+from sct_apply_transfo import Transform
 import sct_utils as sct
 from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
@@ -97,7 +97,7 @@ class SpinalCordStraightener(object):
 
         # create temporary folder
         path_tmp = 'tmp.'+time.strftime("%y%m%d%H%M%S")
-        os.mkdir(path_tmp)
+        sct.run('mkdir '+path_tmp, verbose)
 
         # copy files into tmp folder
         sct.run('cp '+fname_anat+' '+path_tmp)
@@ -119,7 +119,7 @@ class SpinalCordStraightener(object):
             sct.printv('.. voxel size:  '+str(px)+'mm x '+str(py)+'mm x '+str(pz)+'mm', verbose)
 
             # smooth centerline
-            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = self.smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
+            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = SpinalCordStraightener.smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
 
             # Get coordinates of landmarks along curved centerline
             #==========================================================================================
@@ -400,8 +400,8 @@ class SpinalCordStraightener(object):
         sct.printv('\nTo view results, type:', verbose)
         sct.printv('fslview '+fname_straight+' &\n', verbose, 'info')
 
-
-    def smooth_centerline(self, fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
+    @staticmethod
+    def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
         """
         :param fname_centerline: centerline in RPI orientation
         :return: a bunch of useful stuff

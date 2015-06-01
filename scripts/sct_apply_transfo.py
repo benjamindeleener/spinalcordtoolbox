@@ -1,4 +1,18 @@
-__author__ = 'olcoma'
+#!/usr/bin/env python
+#########################################################################################
+#
+# Apply transformations. This function is a wrapper for sct_WarpImageMultiTransform
+#
+# ---------------------------------------------------------------------------------------
+# Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
+# Authors: Julien Cohen-Adad, Olivier Comtois
+# Modified: 2014-07-20
+#
+# About the license: see the file LICENSE.TXT
+#########################################################################################
+
+# TODO: display message at the end
+# TODO: interpolation methods
 
 import sys
 import os
@@ -7,7 +21,7 @@ import commands
 import time
 from msct_parser import Parser
 import sct_utils as sct
-from osct_crop_image import ImageCropper
+from sct_crop_image import ImageCropper
 
 
 class Transform:
@@ -108,7 +122,7 @@ class Transform:
             sct.printv('\nCreate temporary folder...', verbose)
             path_tmp = sct.slash_at_the_end('tmp.'+time.strftime("%y%m%d%H%M%S"), 1)
             # sct.run('mkdir '+path_tmp, verbose)
-            os.mkdir(path_tmp)
+            sct.run('mkdir '+path_tmp, verbose)
 
             # Copying input data to tmp folder
             # NB: cannot use c3d here because c3d cannot convert 4D data.
@@ -189,11 +203,11 @@ if __name__ == "__main__":
                       default_value='0',
                       example=['0','1','2'])
     parser.add_option(name="-o",
-                      type_value="multiple_choice",
+                      type_value="file",
                       description="registered source",
                       mandatory=False,
                       default_value='',
-                      example=['0','1','2'])
+                      example="source.nii.gz")
     parser.add_option(name="-x",
                       type_value="multiple_choice",
                       description="interpolation method",

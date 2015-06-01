@@ -6,7 +6,7 @@ import sys
 sys.path.append("../../scripts")
 import sct_utils as sct
 import nibabel
-from osct_create_mask import Mask
+from sct_create_mask import Mask
 
 
 class TestCreateMask(unittest.TestCase):
