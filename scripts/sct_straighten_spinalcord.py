@@ -517,8 +517,8 @@ if __name__ == "__main__":
                       type_value="multiple_choice",
                       description="remove temporary files.",
                       mandatory=False,
-                      example="spline",
-                      default_value=['0', '1'])
+                      example=['0', '1'],
+                      default_value='0')
     parser.add_option(name="-a",
                       type_value="str",
                       description="Algorithm for curve fitting.",

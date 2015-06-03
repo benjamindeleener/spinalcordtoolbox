@@ -27,7 +27,12 @@ from sct_crop_image import ImageCropper
 class Transform:
     def __init__(self,input_filename, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
         self.input_filename = input_filename
-        self.warp_input = warp
+        if isinstance(warp, str):
+            list_tmp = list()
+            list_tmp.append(warp)
+            self.warp_input = list_tmp
+        else:
+            self.warp_input = warp
         self.output_filename = output_filename
         self.interp = interp
         self.source_reg = source_reg
@@ -188,7 +193,7 @@ if __name__ == "__main__":
                       example="t2.nii.gz")
     parser.add_option(name="-d",
                       type_value="file",
-                      description="output file",
+                      description="destination image",
                       mandatory=True,
                       example="out.nii.gz")
     parser.add_option(name="-w",
@@ -203,8 +208,8 @@ if __name__ == "__main__":
                       default_value='0',
                       example=['0','1','2'])
     parser.add_option(name="-o",
-                      type_value="file",
-                      description="registered source",
+                      type_value="file_output",
+                      description="output file",
                       mandatory=False,
                       default_value='',
                       example="source.nii.gz")

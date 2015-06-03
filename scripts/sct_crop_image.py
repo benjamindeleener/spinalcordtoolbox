@@ -229,7 +229,7 @@ if __name__ == "__main__":
     # Mandatory arguments
     parser.usage.set_description('Tools to crop an image. Either through command line or GUI')
     parser.add_option(name="-i",
-                      type_value="file",
+                      type_value="image_nifti",
                       description="input image.",
                       mandatory=True,
                       example="t2.nii.gz")
@@ -365,7 +365,7 @@ if __name__ == "__main__":
         if "-bmax" in arguments:
             cropper.bmax = True
         if "-ref" in arguments:
-            cropper.ref = True
+            cropper.ref = arguments["-ref"]
         if "-mesh" in arguments:
             cropper.mesh = arguments["-mesh"]
 

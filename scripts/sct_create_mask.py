@@ -266,12 +266,12 @@ if __name__ == "__main__":
 
     parser.usage.set_description('Creates a mask with a specific method and shape and returns it as a file')
     parser.add_option(name="-i",
-                      type_value="file",
+                      type_value="image_nifti",
                       description="input image.",
                       mandatory=True,
                       example="t2.nii.gz")
     parser.add_option(name="-m",
-                      type_value=[[','], 'str'],
+                      type_value='str',
                       description="""method to generate mask and associated value.\ncoord: X,Y coordinate of center of mask. E.g.: coord,20x15\npoint: volume that contains a single point. E.g.: point,label.nii.gz\ncenter: mask is created at center of FOV. In that case, "val" is not required.\ncenterline: volume that contains centerline. E.g.: centerline,my_centerline.nii")""",
                       mandatory=False,
                       default_value=Mask.DEFAULT_METHOD)
@@ -288,7 +288,7 @@ if __name__ == "__main__":
                       default_value=Mask.DEFAULT_SHAPE,
                       example="gaussian")
     parser.add_option(name="-o",
-                      type_value="file",
+                      type_value="file_output",
                       description="output image.",
                       mandatory=False,
                       example="test.nii.gz")
@@ -317,13 +317,16 @@ if __name__ == "__main__":
     if "-m" in arguments:
         method_list = arguments["-m"].replace(' ', '').split(',')
         mask.method = method_list[0]
-        mask.method_value = method_list[1]
+        if len(method_list) == 2:
+            mask.method_value = method_list[1]
+        elif len(method_list) > 2:
+            sct.printv("Seperate the method by its values with only 1 coma.", "warning")
     if "-f" in arguments:
         mask.shape = arguments["-f"]
     if "-s" in arguments:
         mask.size = arguments["-s"]
     if "-r" in arguments:
-        mask.rm_tmp_files = mask.size = arguments["-r"]
+        mask.rm_tmp_files = arguments["-r"]
     if "-v" in arguments:
         mask.verbose = arguments["-v"]
 

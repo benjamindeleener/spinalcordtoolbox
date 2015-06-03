@@ -33,7 +33,8 @@ class TestCreateMask(unittest.TestCase):
     def test_method_coord(self):
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="coord", method_value="26x30", verbose=1).create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m coord,26x30")
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m coord,26x30"
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -46,7 +47,8 @@ class TestCreateMask(unittest.TestCase):
         label_file = os.path.abspath(".."+self.TEST_DATA_PATH+"labels.nii.gz")
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="point", method_value=label_file, verbose=1).create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m point,"+label_file)
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m point,"+label_file
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -58,7 +60,8 @@ class TestCreateMask(unittest.TestCase):
     def test_method_center(self):
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="center", verbose=1).create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center")
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center"
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -70,7 +73,8 @@ class TestCreateMask(unittest.TestCase):
         oriented_seg = "oriented_seg.nii.gz"
         sct.run("sct_orientation -i "+os.path.abspath(self.CENTERLINE_FILE)+" -s RPI -o "+oriented_seg)
         Mask(input_file=os.path.abspath(self.ORIENTED_FILE), verbose=1,  output_file=os.path.abspath(self.OUT_FILE), method="centerline", method_value=os.path.abspath(oriented_seg)).create_mask()
-        sct.run("sct_create_mask -i "+os.path.abspath(self.ORIENTED_FILE)+" -o "+os.path.abspath(self.GOLD_FILE)+" -m centerline,"+os.path.abspath(oriented_seg))
+        cmd = "sct_create_mask -i "+os.path.abspath(self.ORIENTED_FILE)+" -o "+os.path.abspath(self.GOLD_FILE)+" -m centerline,"+os.path.abspath(oriented_seg)
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -82,7 +86,8 @@ class TestCreateMask(unittest.TestCase):
     def test_shape_cylinder(self):
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="center", verbose=1, shape="cylinder").create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -f cylinder")
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -f cylinder"
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -93,7 +98,8 @@ class TestCreateMask(unittest.TestCase):
     def test_shape_box(self):
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="center", verbose=1, shape="box").create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -f box")
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -f box"
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
@@ -104,7 +110,8 @@ class TestCreateMask(unittest.TestCase):
     def test_shape_gaussian(self):
 
         Mask(input_file=self.ORIENTED_FILE, output_file=self.OUT_FILE, method="center", verbose=1, shape="gaussian", size=3).create_mask()
-        sct.run("sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -s 3 -f gaussian")
+        cmd = "sct_create_mask -i "+self.ORIENTED_FILE+" -o "+self.GOLD_FILE+" -m center -s 3 -f gaussian"
+        sct.run(cmd)
 
         # get raw data from file
         result = nibabel.load(self.OUT_FILE).get_data().data
