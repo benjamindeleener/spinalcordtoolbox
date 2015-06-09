@@ -1,4 +1,3 @@
-__author__ = 'olcoma'
 
 import unittest
 import os
