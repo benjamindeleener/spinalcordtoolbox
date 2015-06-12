@@ -31,6 +31,91 @@ from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
 
 
+def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
+    """
+    :param fname_centerline: centerline in RPI orientation
+    :return: a bunch of useful stuff
+    """
+    # window_length = param.window_length
+    # type_window = param.type_window
+    # algo_fitting = param.algo_fitting
+
+    sct.printv('\nSmooth centerline/segmentation...', verbose)
+
+    # get dimensions (again!)
+    nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension(fname_centerline)
+
+    # open centerline
+    file = load(fname_centerline)
+    data = file.get_data()
+
+    # loop across z and associate x,y coordinate with the point having maximum intensity
+    # N.B. len(z_centerline) = nz_nonz can be smaller than nz in case the centerline is smaller than the input volume
+    z_centerline = [iz for iz in range(0, nz, 1) if data[:, :, iz].any()]
+    nz_nonz = len(z_centerline)
+    x_centerline = [0 for iz in range(0, nz_nonz, 1)]
+    y_centerline = [0 for iz in range(0, nz_nonz, 1)]
+    x_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
+    y_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
+    z_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
+
+    # get center of mass of the centerline/segmentation
+    sct.printv('.. Get center of mass of the centerline/segmentation...', verbose)
+    for iz in range(0, nz_nonz, 1):
+        x_centerline[iz], y_centerline[iz] = ndimage.measurements.center_of_mass(array(data[:, :, z_centerline[iz]]))
+
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # data_tmp = data
+        # data_tmp[x_centerline[iz], y_centerline[iz], z_centerline[iz]] = 10
+        # implot = ax.imshow(data_tmp[:, :, z_centerline[iz]].T)
+        # implot.set_cmap('gray')
+        # plt.show()
+
+    sct.printv('.. Smoothing algo = '+algo_fitting, verbose)
+    if algo_fitting == 'hanning':
+        # 2D smoothing
+        sct.printv('.. Windows length = '+str(window_length), verbose)
+
+        # change to array
+        x_centerline = asarray(x_centerline)
+        y_centerline = asarray(y_centerline)
+
+
+        # Smooth the curve
+        x_centerline_smooth = smoothing_window(x_centerline, window_len=window_length/pz, window=type_window, verbose = verbose)
+        y_centerline_smooth = smoothing_window(y_centerline, window_len=window_length/pz, window=type_window, verbose = verbose)
+
+        # convert to list final result
+        x_centerline_smooth = x_centerline_smooth.tolist()
+        y_centerline_smooth = y_centerline_smooth.tolist()
+
+        # clear variable
+        del data
+
+        x_centerline_fit = x_centerline_smooth
+        y_centerline_fit = y_centerline_smooth
+        z_centerline_fit = z_centerline
+
+        # get derivative
+        x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = evaluate_derivative_3D(x_centerline_fit, y_centerline_fit, z_centerline, px, py, pz)
+
+        x_centerline_fit = asarray(x_centerline_fit)
+        y_centerline_fit = asarray(y_centerline_fit)
+        z_centerline_fit = asarray(z_centerline_fit)
+
+    elif algo_fitting == 'nurbs':
+        from msct_smooth import b_spline_nurbs
+        x_centerline_fit, y_centerline_fit, z_centerline_fit, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = b_spline_nurbs(x_centerline, y_centerline, z_centerline, nbControl=None, verbose=verbose)
+
+
+    else:
+        sct.printv('ERROR: wrong algorithm for fitting',1,'error')
+
+    return x_centerline_fit, y_centerline_fit, z_centerline_fit, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv
+
+
 class SpinalCordStraightener(object):
 
     def __init__(self, input_filename, centerline_filename, debug=0, deg_poly=10, gapxy=20, gapz=15, padding=30, interpolation_warp='spline', rm_tmp_files=1, verbose=1, algo_fitting='hanning', type_window='hanning', window_length=50, crop=1):
@@ -48,6 +133,9 @@ class SpinalCordStraightener(object):
         self.type_window = type_window  # !! for more choices, edit msct_smooth. Possibilities: 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
         self.window_length = window_length
         self.crop = crop
+
+        self.mse_straightening = 0.0
+        self.max_distance_straightening = 0.0
 
     def straighten(self):
         # Initialization
@@ -119,7 +207,7 @@ class SpinalCordStraightener(object):
             sct.printv('.. voxel size:  '+str(px)+'mm x '+str(py)+'mm x '+str(pz)+'mm', verbose)
 
             # smooth centerline
-            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = SpinalCordStraightener.smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
+            x_centerline_fit, y_centerline_fit, z_centerline, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = smooth_centerline(fname_centerline_orient, algo_fitting=algo_fitting, type_window=type_window, window_length=window_length,verbose=verbose)
 
             # Get coordinates of landmarks along curved centerline
             #==========================================================================================
@@ -358,20 +446,18 @@ class SpinalCordStraightener(object):
 
             # compute error between the input data and the nurbs
             from math import sqrt
-            mse_curve = 0.0
-            max_dist = 0.0
             x0 = int(round(file_centerline_straight.data.shape[0]/2.0))
             y0 = int(round(file_centerline_straight.data.shape[1]/2.0))
             count_mean = 0
             for coord_z in mean_coord:
                 if not isnan(sum(coord_z)):
                     dist = ((x0-coord_z[0])*px)**2 + ((y0-coord_z[1])*py)**2
-                    mse_curve += dist
+                    self.mse_straightening += dist
                     dist = sqrt(dist)
-                    if dist > max_dist:
-                        max_dist = dist
+                    if dist > self.max_distance_straightening:
+                        self.max_distance_straightening = dist
                     count_mean += 1
-            mse_curve = mse_curve/float(count_mean)
+            self.mse_straightening = self.mse_straightening/float(count_mean)
 
         except:
             pass
@@ -400,90 +486,6 @@ class SpinalCordStraightener(object):
         sct.printv('\nTo view results, type:', verbose)
         sct.printv('fslview '+fname_straight+' &\n', verbose, 'info')
 
-    @staticmethod
-    def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):
-        """
-        :param fname_centerline: centerline in RPI orientation
-        :return: a bunch of useful stuff
-        """
-        # window_length = param.window_length
-        # type_window = param.type_window
-        # algo_fitting = param.algo_fitting
-
-        sct.printv('\nSmooth centerline/segmentation...', verbose)
-
-        # get dimensions (again!)
-        nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension(fname_centerline)
-
-        # open centerline
-        file = load(fname_centerline)
-        data = file.get_data()
-
-        # loop across z and associate x,y coordinate with the point having maximum intensity
-        # N.B. len(z_centerline) = nz_nonz can be smaller than nz in case the centerline is smaller than the input volume
-        z_centerline = [iz for iz in range(0, nz, 1) if data[:, :, iz].any()]
-        nz_nonz = len(z_centerline)
-        x_centerline = [0 for iz in range(0, nz_nonz, 1)]
-        y_centerline = [0 for iz in range(0, nz_nonz, 1)]
-        x_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
-        y_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
-        z_centerline_deriv = [0 for iz in range(0, nz_nonz, 1)]
-
-        # get center of mass of the centerline/segmentation
-        sct.printv('.. Get center of mass of the centerline/segmentation...', verbose)
-        for iz in range(0, nz_nonz, 1):
-            x_centerline[iz], y_centerline[iz] = ndimage.measurements.center_of_mass(array(data[:, :, z_centerline[iz]]))
-
-            # import matplotlib.pyplot as plt
-            # fig = plt.figure()
-            # ax = fig.add_subplot(111)
-            # data_tmp = data
-            # data_tmp[x_centerline[iz], y_centerline[iz], z_centerline[iz]] = 10
-            # implot = ax.imshow(data_tmp[:, :, z_centerline[iz]].T)
-            # implot.set_cmap('gray')
-            # plt.show()
-
-        sct.printv('.. Smoothing algo = '+algo_fitting, verbose)
-        if algo_fitting == 'hanning':
-            # 2D smoothing
-            sct.printv('.. Windows length = '+str(window_length), verbose)
-
-            # change to array
-            x_centerline = asarray(x_centerline)
-            y_centerline = asarray(y_centerline)
-
-
-            # Smooth the curve
-            x_centerline_smooth = smoothing_window(x_centerline, window_len=window_length/pz, window=type_window, verbose = verbose)
-            y_centerline_smooth = smoothing_window(y_centerline, window_len=window_length/pz, window=type_window, verbose = verbose)
-
-            # convert to list final result
-            x_centerline_smooth = x_centerline_smooth.tolist()
-            y_centerline_smooth = y_centerline_smooth.tolist()
-
-            # clear variable
-            del data
-
-            x_centerline_fit = x_centerline_smooth
-            y_centerline_fit = y_centerline_smooth
-            z_centerline_fit = z_centerline
-
-            # get derivative
-            x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = evaluate_derivative_3D(x_centerline_fit, y_centerline_fit, z_centerline, px, py, pz)
-
-            x_centerline_fit = asarray(x_centerline_fit)
-            y_centerline_fit = asarray(y_centerline_fit)
-            z_centerline_fit = asarray(z_centerline_fit)
-
-        elif algo_fitting == 'nurbs':
-            from msct_smooth import b_spline_nurbs
-            x_centerline_fit, y_centerline_fit, z_centerline_fit, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = b_spline_nurbs(x_centerline, y_centerline, z_centerline, nbControl=None, verbose=verbose)
-
-
-        else:
-            sct.printv('ERROR: wrong algorithm for fitting',1,'error')
-
-        return x_centerline_fit, y_centerline_fit, z_centerline_fit, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv
 
 if __name__ == "__main__":
     # Initialize parser

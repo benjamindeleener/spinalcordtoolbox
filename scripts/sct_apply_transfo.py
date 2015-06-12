@@ -27,7 +27,10 @@ from sct_crop_image import ImageCropper
 class Transform:
     def __init__(self,input_filename, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
         self.input_filename = input_filename
-        self.warp_input = warp
+        if isinstance(warp, str):
+            self.warp_input = list([warp])
+        else:
+            self.warp_input = warp
         self.output_filename = output_filename
         self.interp = interp
         self.source_reg = source_reg
