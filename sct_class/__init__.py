@@ -1,2 +1,2 @@
-import Algorithm
-import ImageCropper
+from Algorithm import *
+from ImageCropper import *
