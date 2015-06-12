@@ -28,11 +28,9 @@ class Transform:
     def __init__(self,input_filename, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0):
         self.input_filename = input_filename
         if isinstance(warp, str):
-            list_tmp = list()
-            list_tmp.append(warp)
-            self.warp_input = list_tmp
+            self.warp_input = list([warp])
         else:
-            self.warp_input = warp
+            self.warp_input = list(warp)
         self.output_filename = output_filename
         self.interp = interp
         self.source_reg = source_reg
@@ -188,7 +186,7 @@ if __name__ == "__main__":
     parser.usage.set_description('Apply transformations. This function is a wrapper for antsApplyTransforms (ANTs).')
     parser.add_option(name="-i",
                       type_value="image_nifti",
-                      description="input image.",
+                      description="input image",
                       mandatory=True,
                       example="t2.nii.gz")
     parser.add_option(name="-d",
@@ -197,7 +195,7 @@ if __name__ == "__main__":
                       mandatory=True,
                       example="out.nii.gz")
     parser.add_option(name="-w",
-                      type_value=[[','], "image_nifti"],
+                      type_value=[[','], "file"],
                       description="warping field",
                       mandatory=True,
                       example="warp1.nii.gz,warp2.nii.gz")
