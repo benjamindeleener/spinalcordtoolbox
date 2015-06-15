@@ -32,11 +32,14 @@
 # About the license: see the file LICENSE.TXT
 # TODO : compute the 'total' mean dice (T1, T2, T2star)
 #########################################################################################
-from msct_parser import Parser
 import sys
-import sct_utils as sct
 import os
 import time
+
+from msct_parser import Parser
+import sct_utils as sct
+
+
 
 
 # DEFAULT PARAMETERS
@@ -365,7 +368,8 @@ class Pipeline:
                     sct.printv("\nStraightening " + subject.dir_name + '/' + path + '/'
                                + subject.name_t2 + " using sct_straighten_spinalcord ...", verbose=1, type="normal")
 
-                    from sct_class.SpinalCordStraightener import SpinalCordStraightener
+                    from sct_class import SpinalCordStraightener
+
                     sc_straight = SpinalCordStraightener(name, name_seg)
 
                     if self.straightening_params is not None:

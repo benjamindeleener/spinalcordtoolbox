@@ -11,18 +11,17 @@
 # About the license: see the file LICENSE.TXT
 #########################################################################################
 
-import sys
 import os
-import getopt
 import commands
 import time
-from msct_parser import Parser
+
 import sct_utils as sct
-from sct_class import ImageCropper
-from sct_class import Algorithm
+from sct_class.ImageCropper import ImageCropper
+from sct_class.Algorithm import Algorithm
+
 
 class ApplyTransfo(Algorithm):
-    def __init__(self,input_image, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0, produce_output=1):
+    def __init__(self, input_image, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0, produce_output=1):
         super(ApplyTransfo, self).__init__(input_image, produce_output, verbose)
         if isinstance(warp, str):
             self.warp_input = list([warp])
@@ -163,10 +162,10 @@ class ApplyTransfo(Algorithm):
         if isLastAffine:
             sct.printv('WARNING: the resulting image could have wrong apparent results. You should use an affine transformation as last transformation...',1,'warning')
         elif crop_reference == 1:
-            ImageCropper(input_image=fname_out, output_filename=fname_out, ref=warping_field, background=0).crop()
+            ImageCropper(input_image=fname_out, output_filename=fname_out, ref=warping_field, background=0).execute()
             # sct.run('sct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field+' -b 0')
         elif crop_reference == 2:
-            ImageCropper(input_image=fname_out, output_filename=fname_out, ref=warping_field).crop()
+            ImageCropper(input_image=fname_out, output_filename=fname_out, ref=warping_field).execute()
             # sct.run('sct_crop_image -i '+fname_out+' -o '+fname_out+' -ref '+warping_field)
 
         # display elapsed time

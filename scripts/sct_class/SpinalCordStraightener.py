@@ -13,16 +13,17 @@
 #=======================================================================================================================
 # check if needed Python libraries are already installed or not
 import os
-import getopt
 import time
 import commands
-from sct_label_utils import ProcessLabels
-from sct_class.ImageCropper import ImageCropper
+
 from nibabel import load, Nifti1Image, save
-from numpy import array, asarray, append, insert, linalg, mean, sum, isnan
+from numpy import array, asarray, linalg, mean, sum, isnan
 from sympy.solvers import solve
 from sympy import Symbol
 from scipy import ndimage
+
+from sct_label_utils import ProcessLabels
+from sct_class.ImageCropper import ImageCropper
 from sct_class.ApplyTransfo import ApplyTransfo
 import sct_utils as sct
 from msct_smooth import smoothing_window, evaluate_derivative_3D

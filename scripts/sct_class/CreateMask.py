@@ -11,19 +11,17 @@
 # About the license: see the file LICENSE.TXT
 #########################################################################################
 
-import sys
-from msct_parser import Parser
 import os
-import getopt
-import commands
-from msct_image import Image
-import sct_utils as sct
 import time
+
 import numpy
 import nibabel
 from scipy import ndimage
-from sct_orientation import get_orientation, set_orientation
-from Algorithm import Algorithm
+
+from msct_image import Image
+import sct_utils as sct
+from sct_orientation import get_orientation
+from sct_class.Algorithm import Algorithm
 
 
 class Mask(Algorithm):
@@ -111,7 +109,7 @@ class Mask(Algorithm):
     def rm_tmp_files(self, value):
         self._rm_tmp_files = value
 
-    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt):
+    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt, path_tmp):
         raise NotImplementedError("Use a child class of mask to chose which method will be used")
 
     def execute(self):
@@ -120,14 +118,6 @@ class Mask(Algorithm):
 
         """
         fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '
-
-        method_type = self._method
-
-        # TODO : Erase when used with parser
-        if not method_type == 'center':
-            method_val = self._method_value
-            if method_type == 'centerline':
-                sct.check_file_exist(method_val, self.verbose)
 
         # checking if shape is valid
         if self._shape not in Mask.SHAPE_LIST:
@@ -157,8 +147,6 @@ class Mask(Algorithm):
         # NB: cannot use c3d here because c3d cannot convert 4D data.
         sct.printv('\nCopying input data to tmp folder and convert to nii...', self.verbose)
         sct.run('cp '+self.input_image+' '+path_tmp+'data'+ext_data, self.verbose)
-        if method_type == 'centerline':
-            sct.run('isct_c3d '+self.method_val+' -o '+path_tmp+'/centerline.nii.gz')
 
         # go to tmp folder
         os.chdir(path_tmp)
@@ -204,11 +192,14 @@ class Mask(Algorithm):
             #     sct.printv('\nCreate line...', self.verbose)
             #     fname_centerline = self.create_line('data.nii', coord, nz)
 
-            fname_centerline = self.mask_method(nx, ny, nz, nt, px, py, pz, pt)
+            fname_centerline = self.mask_method(nx, ny, nz, nt, px, py, pz, pt, path_tmp)
 
             # create mask
             sct.printv('\nCreate mask...', self.verbose)
-            centerline = nibabel.load(fname_centerline)  # open centerline
+            try:
+                centerline = nibabel.load(fname_centerline)  # open centerline
+            except Exception, e:
+                sct.printv(e.message,"warning")
             hdr = centerline.get_header()  # get header
             hdr.set_data_dtype('uint8')  # set imagetype to uint8
             data_centerline = centerline.get_data()  # get centerline
@@ -328,18 +319,18 @@ class Mask(Algorithm):
 
 class MaskCoordinates(Mask):
     def __init__(self, input_image, output_file=None, method_value=None, shape=Mask.DEFAULT_SHAPE, size=Mask.DEFAULT_SIZE, verbose=1, rm_tmp_files=1, rm_output_file=0, produce_output=1):
-        super(MaskCoordinates, self).__init__(input_image, output_file, method_value, shape, size, verbose, rm_tmp_files, rm_output_file, produce_output)
+        super(MaskCoordinates, self).__init__(input_image=input_image, output_file=output_file, method_value=method_value, shape=shape, size=size, verbose=verbose, rm_tmp_files=rm_tmp_files, rm_output_file=rm_output_file, produce_output=produce_output)
 
-    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt):
+    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt, path_tmp):
         coord = map(int, self.method_value.split('x'))
         return self.create_centerline(coord, nz)
 
 
 class MaskPoint(Mask):
     def __init__(self, input_image, output_file=None, method_value=None, shape=Mask.DEFAULT_SHAPE, size=Mask.DEFAULT_SIZE, verbose=1, rm_tmp_files=1, rm_output_file=0, produce_output=1):
-        super(MaskPoint, self).__init__(input_image, output_file, method_value, shape, size, verbose, rm_tmp_files, rm_output_file, produce_output)
+        super(MaskPoint, self).__init__(input_image=input_image, output_file=output_file, method_value=method_value, shape=shape, size=size, verbose=verbose, rm_tmp_files=rm_tmp_files, rm_output_file=rm_output_file, produce_output=produce_output)
 
-    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt):
+    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt, path_tmp):
         # get file name
         fname_point = self.method_value
         # extract coordinate of point
@@ -353,16 +344,18 @@ class MaskPoint(Mask):
 
 class MaskCenter(Mask):
     def __init__(self, input_image, output_file=None, method_value=None, shape=Mask.DEFAULT_SHAPE, size=Mask.DEFAULT_SIZE, verbose=1, rm_tmp_files=1, rm_output_file=0, produce_output=1):
-        super(MaskCenter, self).__init__(input_image, output_file, method_value, shape, size, verbose, rm_tmp_files, rm_output_file, produce_output)
+        super(MaskCenter, self).__init__(input_image=input_image, output_file=output_file, method_value=method_value, shape=shape, size=size, verbose=verbose, rm_tmp_files=rm_tmp_files, rm_output_file=rm_output_file, produce_output=produce_output)
 
-    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt):
+    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt, path_tmp):
         coord = round(float(nx)/2), round(float(ny)/2)
         return self.create_centerline(coord, nz)
 
 
 class MaskCenterline(Mask):
     def __init__(self, input_image, output_file=None, method_value=None, shape=Mask.DEFAULT_SHAPE, size=Mask.DEFAULT_SIZE, verbose=1, rm_tmp_files=1, rm_output_file=0, produce_output=1):
-        super(MaskCenterline, self).__init__(input_image, output_file, method_value, shape, size, verbose, rm_tmp_files, rm_output_file, produce_output)
+        super(MaskCenterline, self).__init__(input_image=input_image, output_file=output_file, method_value=method_value, shape=shape, size=size, verbose=verbose, rm_tmp_files=rm_tmp_files, rm_output_file=rm_output_file, produce_output=produce_output)
 
-    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt):
+    def mask_method(self, nx, ny, nz, nt, px, py, pz, pt, path_tmp):
+        sct.check_file_exist(self.method_value, self.verbose)
+        sct.run('isct_c3d '+self.method_value+' -o centerline.nii.gz')
         return "centerline.nii.gz"
