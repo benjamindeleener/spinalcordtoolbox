@@ -14,8 +14,7 @@ import numpy
 import nibabel
 from scipy import ndimage
 from sct_orientation import get_orientation, set_orientation
-from Algorithm import Algorithm
-from CreateMask import Mask, MaskCenter, MaskCoordinates, MaskPoint, MaskCenterline
+from sct_class.CreateMask import *
 
 if __name__ == "__main__":
     # Initialize parser,

@@ -32,7 +32,7 @@ class TestStraightenSpinalCord(unittest.TestCase):
     def test_default(self):
         os.chdir("ref")
         try:
-            SpinalCordStraightener(input_filename="../"+self.ORIGINAL_FILE, centerline_filename="../"+self.CENTERLINE_FILE, verbose=1).straighten()
+            SpinalCordStraightener(input_filename="../"+self.ORIGINAL_FILE, centerline_filename="../"+self.CENTERLINE_FILE, verbose=1).execute()
         except:
             pass
         os.chdir("../gold")

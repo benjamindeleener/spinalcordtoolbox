@@ -372,7 +372,7 @@ class Pipeline:
                         sc_straight.algo_fitting = str(dict_params_straightening["-a"])
 
                 sct.printv(cmd_straightening)
-                sc_straight.straighten()
+                sc_straight.execute()
 
             except Exception, e:
                 sct.printv('WARNING: AN ERROR OCCURRED WHEN TRYING TO STRAIGHTEN THE SPINAL CORD' + t.upper() + ' : ',
