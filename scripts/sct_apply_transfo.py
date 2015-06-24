@@ -22,7 +22,6 @@ if __name__ == "__main__":
     # Initialize parser
     parser = Parser(__file__)
 
-    # Mandatory arguments
     parser.usage.set_description('Apply transformations. This function is a wrapper for antsApplyTransforms (ANTs).')
     parser.add_option(name="-i",
                       type_value="image_nifti",
