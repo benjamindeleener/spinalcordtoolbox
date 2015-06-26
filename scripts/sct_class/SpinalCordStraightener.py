@@ -568,14 +568,14 @@ class SpinalCordStraightener(Algorithm):
 
             # Apply transformation to input image
             sct.printv('\nApply transformation to input image...', verbose)
-            ApplyTransfo(input_filename=str(file_anat+ext_anat), source_reg="tmp.anat_rigid_warp.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp=interpolation_warp, warp="tmp.curve2straight.nii.gz", verbose=verbose).apply()
+            ApplyTransfo(input_filename=str(file_anat+ext_anat), source_reg="tmp.anat_rigid_warp.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp=interpolation_warp, warp="tmp.curve2straight.nii.gz", verbose=verbose).execute()
 
             # compute the error between the straightened centerline/segmentation and the central vertical line.
             # Ideally, the error should be zero.
             # Apply deformation to input image
             sct.printv('\nApply transformation to centerline image...', verbose)
             # sct.run('sct_apply_transfo -i '+fname_centerline_orient+' -o tmp.centerline_straight.nii.gz -d tmp.landmarks_straight_crop.nii.gz -x nn -w tmp.curve2straight.nii.gz')
-            ApplyTransfo(input_filename=fname_centerline_orient, source_reg="tmp.centerline_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp="nn", warp="tmp.curve2straight.nii.gz", verbose=verbose).apply()
+            ApplyTransfo(input_filename=fname_centerline_orient, source_reg="tmp.centerline_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp="nn", warp="tmp.curve2straight.nii.gz", verbose=verbose).execute()
             #c = sct.run('sct_crop_image -i tmp.centerline_straight.nii.gz -o tmp.centerline_straight_crop.nii.gz -dim 2 -bzmax')
             from msct_image import Image
             file_centerline_straight = Image('tmp.centerline_straight.nii.gz', verbose=verbose)
