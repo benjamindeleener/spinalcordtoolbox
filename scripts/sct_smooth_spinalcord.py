@@ -28,7 +28,7 @@ from scipy import ndimage
 from copy import copy
 from sct_apply_transfo import ApplyTransfo
 from sct_straighten_spinalcord import SpinalCordStraightener
-from sct_algorithm import Algorithm
+from msct_base_classes import Algorithm
 
 
 class SmoothSpinalcord(Algorithm):

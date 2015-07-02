@@ -11,7 +11,7 @@ from scipy import ndimage
 from msct_image import Image
 import sct_utils as sct
 from sct_orientation import get_orientation
-from sct_algorithm import Algorithm
+from msct_base_classes import Algorithm
 
 
 class CreateMask(Algorithm):

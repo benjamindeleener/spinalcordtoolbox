@@ -19,7 +19,7 @@ import commands
 import time
 import sct_utils as sct
 from sct_crop_image import ImageCropper
-from sct_algorithm import Algorithm
+from msct_base_classes import Algorithm
 
 
 class ApplyTransfo(Algorithm):

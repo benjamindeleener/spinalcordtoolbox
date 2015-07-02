@@ -29,7 +29,7 @@ from sct_apply_transfo import ApplyTransfo
 import sct_utils as sct
 from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
-from sct_algorithm import Algorithm
+from msct_base_classes import Algorithm
 
 
 def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='hanning', window_length=80, verbose=0):

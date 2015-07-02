@@ -13,7 +13,7 @@ import nibabel
 from sct_orientation import set_orientation
 import sct_utils as sct
 from msct_image import Image
-from sct_algorithm import Algorithm
+from msct_base_classes import Algorithm
 
 
 class LineBuilder(object):
