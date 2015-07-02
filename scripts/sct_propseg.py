@@ -14,7 +14,7 @@
 from msct_parser import Parser
 import sys
 import sct_utils as sct
-from msct_base_class import BaseScript
+from msct_base_classes import BaseScript
 
 class ScriptPropseg(BaseScript):
     def __init__(self):
