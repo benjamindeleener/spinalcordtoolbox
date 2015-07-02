@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 #########################################################################################
 #
-# Create mask along z direction.
+# sct_create_mask obect equivalent. Creates a mask along the Z axis
 #
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
-# Authors: Julien Cohen-Adad
-# Modified: 2014-10-11
+# Authors: Benjamin Leener, Julien Cohen-Adad, Olivier Comtois
+# Modified: 2015-05-13
 #
 # About the license: see the file LICENSE.TXT
 #########################################################################################
 
-
-# TODO: scale size in mm.
-
 import sys
+from msct_parser import Parser
 import os
 import getopt
 import commands
+from msct_image import Image
 import sct_utils as sct
 import time
 import numpy
@@ -26,310 +25,317 @@ from scipy import ndimage
 from sct_orientation import get_orientation, set_orientation
 
 
-# DEFAULT PARAMETERS
-class Param:
-    def __init__(self):
-        self.debug = 0
-        self.fname_data = ''
-        self.fname_out = ''
-        self.method_list = ['coord', 'point', 'centerline', 'center']
-        self.method = 'center'  # default method
-        self.shape_list = ['cylinder', 'box', 'gaussian']
-        self.shape = 'cylinder'  # default shape
-        self.size = 41  # in voxel. if gaussian, size corresponds to sigma.
-        self.file_prefix = 'mask_'  # output prefix
-        self.verbose = 1
-        self.remove_tmp_files = 1
+class Mask(object):
 
+    # class constants definition
+    OUTPUT_PREFIX = "mask_"
+    METHOD_LIST = ['coord', 'point', 'centerline', 'center']
+    SHAPE_LIST = ['cylinder', 'box', 'gaussian']
+    DEFAULT_SHAPE = "cylinder"
+    DEFAULT_METHOD = "center"
+    DEFAULT_SIZE = 41
 
-# main
-#=======================================================================================================================
-def main():
+    def __init__(self, input_file, output_file=None, method=DEFAULT_METHOD, method_value=None, shape=DEFAULT_SHAPE, size=DEFAULT_SIZE, verbose=1, rm_tmp_files=1, rm_output_file=0):
 
-    # Parameters for debug mode
-    if param.debug:
-        print '\n*** WARNING: DEBUG MODE ON ***\n'
-        # get path of the testing data
-        status, path_sct_data = commands.getstatusoutput('echo $SCT_TESTING_DATA_DIR')
-        param.fname_data = path_sct_data+'/mt/mt1.nii.gz'
-        param.method = 'point,'+path_sct_data+'/mt/mt1_point.nii.gz' #'centerline,/Users/julien/data/temp/sct_example_data/t2/t2_centerlinerpi.nii.gz'  #coord,68x69'
-        param.shape = 'cylinder'
-        param.size = 20
-        param.remove_tmp_files = 1
-        param.verbose = 1
-    else:
-        # Check input parameters
+        self.input_file = input_file
+        self.output_file = output_file
+        self.method = method
+        self.method_value = method_value
+        self.shape = shape
+        self.size = size
+        self.verbose = verbose
+        self.rm_tmp_files = rm_tmp_files
+        self.result = None
+        self.rm_output_file = rm_output_file
+
+    def create_mask(self):
+        """
+        This method creates a mask and returns the result either through a file or as an msct_image Image object
+
+        """
+
+        fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '
+
+        method_type = self.method
+
+        if self.method is None and self.method_value is not None:
+            sct.printv("ERROR : Must provide method type with method values", 1, "error")
+
+        # checking if method is valid
+        if method_type not in Mask.METHOD_LIST:
+            sct.printv('\nERROR in '+os.path.basename(__file__)+': Method "'+self.method+'" is not recognized. \n', self.verbose, 'error')
+
+        # checking file existence
+        sct.printv('\ncheck existence of input files...', self.verbose)
+        sct.check_file_exist(self.input_file, self.verbose)
+
+        if not method_type == 'center':
+            method_val = self.method_value
+            if method_type == 'centerline':
+                sct.check_file_exist(method_val, self.verbose)
+
+        # checking if shape is valid
+        if self.shape not in Mask.SHAPE_LIST:
+            sct.printv('\nERROR in '+os.path.basename(__file__)+': Shape "'+self.shape+'" is not recognized. \n', self.verbose, 'error')
+
+        # checking orientation in RPI
+        if not get_orientation(self.input_file) == 'RPI':
+            sct.printv('\nERROR in '+os.path.basename(__file__)+': Orientation of input image should be RPI. Use sct_orientation to put your image in RPI.\n', 1, 'error')
+
+        # display input parameters
+        sct.printv('\nInput parameters:', self.verbose)
+        sct.printv('  data ..................'+self.input_file, self.verbose)
+        sct.printv('  method ................'+method_type, self.verbose)
+
+        # Extract path/file/extension
+        path_data, file_data, ext_data = sct.extract_fname(self.input_file)
+
+        # Get output folder and file name
+        if self.output_file is None:
+            self.output_file = Mask.OUTPUT_PREFIX+file_data+ext_data
+
+        # creating temporary folder
+        path_tmp = sct.slash_at_the_end('tmp.'+time.strftime("%y%m%d%H%M%S"), 1)
+        os.mkdir(path_tmp)
+
+        # Copying input data to tmp folder and convert to nii
+        # NB: cannot use c3d here because c3d cannot convert 4D data.
+        sct.printv('\nCopying input data to tmp folder and convert to nii...', self.verbose)
+        sct.run('cp '+self.input_file+' '+path_tmp+'data'+ext_data, self.verbose)
+        if method_type == 'centerline':
+            sct.run('isct_c3d '+method_val+' -o '+path_tmp+'/centerline.nii.gz')
+
+        # go to tmp folder
+        os.chdir(path_tmp)
         try:
-            opts, args = getopt.getopt(sys.argv[1:], 'hf:i:m:o:r:s:v:')
-        except getopt.GetoptError:
-            usage()
-        if not opts:
-            usage()
-        for opt, arg in opts:
-            if opt == '-h':
-                usage()
-            elif opt in '-f':
-                param.shape = arg
-            elif opt in '-i':
-                param.fname_data = arg
-            elif opt in '-m':
-                param.method = arg
-            elif opt in ('-o'):
-                param.fname_out = arg
-            elif opt in '-r':
-                param.remove_tmp_files = int(arg)
-            elif opt in '-s':
-                param.size = int(arg)
-            elif opt in '-v':
-                param.verbose = int(arg)
+            # convert to nii format
+            sct.run('fslchfiletype NIFTI data', self.verbose)
 
-    # run main program
-    create_mask()
+            # Get dimensions of data
+            nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension('data.nii')
+            sct.printv('  ' + str(nx) + ' x ' + str(ny) + ' x ' + str(nz)+ ' x ' + str(nt), self.verbose)
+            # in case user input 4d data
+            if nt != 1:
+                sct.printv('WARNING in '+os.path.basename(__file__)+': Input image is 4d but output mask will 3D.', self.verbose, 'warning')
+                # extract first volume to have 3d reference
+                sct.run(fsloutput+'fslroi data data -0 1', self.verbose)
 
+            if method_type == 'coord':
+                # parse to get coordinate
+                coord = map(int, method_val.split('x'))
 
-# create_mask
-#=======================================================================================================================
-def create_mask():
+            if method_type == 'point':
+                # get file name
+                fname_point = method_val
+                # extract coordinate of point
+                sct.printv('\nExtract coordinate of point...', self.verbose)
+                # TODO : Running outside script
+                status, output = sct.run('sct_label_utils -i '+fname_point+' -t display-voxel', self.verbose)
+                # parse to get coordinate
+                coord = output[output.find('Position=')+10:-17].split(',')
 
-    fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '  # for faster processing, all outputs are in NIFTI
+            if method_type == 'center':
+                # set coordinate at center of FOV
+                coord = round(float(nx)/2), round(float(ny)/2)
 
-    # display usage if a mandatory argument is not provided
-    if param.fname_data == '' or param.method == '':
-        sct.printv('\nERROR: All mandatory arguments are not provided. See usage (add -h).\n', 1, 'error')
+            if method_type == 'centerline':
+                # get name of centerline from user argument
+                fname_centerline = 'centerline.nii.gz'
+            else:
+                # generate volume with line along Z at coordinates 'coord'
+                sct.printv('\nCreate line...', self.verbose)
+                fname_centerline = self.create_line('data.nii', coord, nz)
 
-    # parse argument for method
-    method_list = param.method.replace(' ', '').split(',')  # remove spaces and parse with comma
-    # method_list = param.method.split(',')  # parse with comma
-    method_type = method_list[0]
+            # create mask
+            sct.printv('\nCreate mask...', self.verbose)
+            centerline = nibabel.load(fname_centerline)  # open centerline
+            hdr = centerline.get_header()  # get header
+            hdr.set_data_dtype('uint8')  # set imagetype to uint8
+            data_centerline = centerline.get_data()  # get centerline
+            z_centerline = [iz for iz in range(0, nz, 1) if data_centerline[:, :, iz].any()]
+            nz = len(z_centerline)
+            # get center of mass of the centerline
+            cx = [0] * nz
+            cy = [0] * nz
+            for iz in range(0, nz, 1):
+                cx[iz], cy[iz] = ndimage.measurements.center_of_mass(numpy.array(data_centerline[:, :, z_centerline[iz]]))
 
-    # check existence of method type
-    if not method_type in param.method_list:
-        sct.printv('\nERROR in '+os.path.basename(__file__)+': Method "'+method_type+'" is not recognized. See usage (add -h).\n', 1, 'error')
+            # create 2d masks
+            file_mask = 'data_mask'
+            for iz in range(nz):
+                center = numpy.array([cx[iz], cy[iz]])
+                mask2d = self.create_mask2d(center, self.shape, self.size, nx, ny)
+                # Write NIFTI volumes
+                img = nibabel.Nifti1Image(mask2d, None, hdr)
+                nibabel.save(img, (file_mask+str(iz)+'.nii'))
+            # merge along Z
+            cmd = 'fslmerge -z mask '
+            for iz in range(nz):
+                cmd = cmd + file_mask+str(iz)+' '
+            status, output = sct.run(cmd, self.verbose)
 
-    # check method val
-    if not method_type == 'center':
-        method_val = method_list[1]
-    del method_list
+            # copy geometry
+            sct.run(fsloutput+'fslcpgeom data mask', self.verbose)
 
-    # check existence of shape
-    if not param.shape in param.shape_list:
-        sct.printv('\nERROR in '+os.path.basename(__file__)+': Shape "'+param.shape+'" is not recognized. See usage (add -h).\n', 1, 'error')
+        except:
+            pass # TODO : Add the exception handler
+        # come back to parent folder
+        os.chdir('..')
 
-    # check existence of input files
-    sct.printv('\ncheck existence of input files...', param.verbose)
-    sct.check_file_exist(param.fname_data, param.verbose)
-    if method_type == 'centerline':
-        sct.check_file_exist(method_val, param.verbose)
+        # Generate output files
+        sct.printv('\nGenerate output files...', self.verbose)
+        sct.generate_output_file(path_tmp+'mask.nii.gz', self.output_file)
 
-    # check if orientation is RPI
-    if not get_orientation(param.fname_data) == 'RPI':
-        sct.printv('\nERROR in '+os.path.basename(__file__)+': Orientation of input image should be RPI. Use sct_orientation to put your image in RPI.\n', 1, 'error')
+        # Remove temporary files
+        if self.rm_tmp_files == 1:
+            sct.printv('\nRemove temporary files...', self.verbose)
+            sct.run('rm -rf '+path_tmp, self.verbose)
 
-    # display input parameters
-    sct.printv('\nInput parameters:', param.verbose)
-    sct.printv('  data ..................'+param.fname_data, param.verbose)
-    sct.printv('  method ................'+method_type, param.verbose)
+        # to view results
+        sct.printv('\nDone! To view results, type:', self.verbose)
+        sct.printv('fslview '+self.input_file+' '+self.output_file+' -l Red -t 0.5 &', self.verbose, 'info')
+        print
 
-    # Extract path/file/extension
-    path_data, file_data, ext_data = sct.extract_fname(param.fname_data)
+        self.result = Image(self.output_file)
 
-    # Get output folder and file name
-    if param.fname_out == '':
-        param.fname_out = param.file_prefix+file_data+ext_data
-    #fname_out = os.path.abspath(path_out+file_out+ext_out)
-
-    # create temporary folder
-    sct.printv('\nCreate temporary folder...', param.verbose)
-    path_tmp = sct.slash_at_the_end('tmp.'+time.strftime("%y%m%d%H%M%S"), 1)
-    sct.run('mkdir '+path_tmp, param.verbose)
-
-    # Copying input data to tmp folder and convert to nii
-    # NB: cannot use c3d here because c3d cannot convert 4D data.
-    sct.printv('\nCopying input data to tmp folder and convert to nii...', param.verbose)
-    sct.run('cp '+param.fname_data+' '+path_tmp+'data'+ext_data, param.verbose)
-    if method_type == 'centerline':
-        sct.run('isct_c3d '+method_val+' -o '+path_tmp+'/centerline.nii.gz')
-
-    # go to tmp folder
-    os.chdir(path_tmp)
-
-    # convert to nii format
-    sct.run('fslchfiletype NIFTI data', param.verbose)
-
-    # Get dimensions of data
-    sct.printv('\nGet dimensions of data...', param.verbose)
-    nx, ny, nz, nt, px, py, pz, pt = sct.get_dimension('data.nii')
-    sct.printv('  ' + str(nx) + ' x ' + str(ny) + ' x ' + str(nz)+ ' x ' + str(nt), param.verbose)
-    # in case user input 4d data
-    if nt != 1:
-        sct.printv('WARNING in '+os.path.basename(__file__)+': Input image is 4d but output mask will 3D.', param.verbose, 'warning')
-        # extract first volume to have 3d reference
-        sct.run(fsloutput+'fslroi data data -0 1', param.verbose)
-
-    if method_type == 'coord':
-        # parse to get coordinate
-        coord = map(int, method_val.split('x'))
-
-    if method_type == 'point':
-        # get file name
-        fname_point = method_val
-        # extract coordinate of point
-        sct.printv('\nExtract coordinate of point...', param.verbose)
-        status, output = sct.run('sct_label_utils -i '+fname_point+' -t display-voxel', param.verbose)
-        # parse to get coordinate
-        coord = output[output.find('Position=')+10:-17].split(',')
-
-    if method_type == 'center':
-        # set coordinate at center of FOV
-        coord = round(float(nx)/2), round(float(ny)/2)
-
-    if method_type == 'centerline':
-        # get name of centerline from user argument
-        fname_centerline = 'centerline.nii.gz'
-    else:
-        # generate volume with line along Z at coordinates 'coord'
-        sct.printv('\nCreate line...', param.verbose)
-        fname_centerline = create_line('data.nii', coord, nz)
-
-    # create mask
-    sct.printv('\nCreate mask...', param.verbose)
-    centerline = nibabel.load(fname_centerline)  # open centerline
-    hdr = centerline.get_header()  # get header
-    hdr.set_data_dtype('uint8')  # set imagetype to uint8
-    data_centerline = centerline.get_data()  # get centerline
-    z_centerline = [iz for iz in range(0, nz, 1) if data_centerline[:, :, iz].any()]
-    nz = len(z_centerline)
-    # get center of mass of the centerline
-    cx = [0] * nz
-    cy = [0] * nz
-    for iz in range(0, nz, 1):
-        cx[iz], cy[iz] = ndimage.measurements.center_of_mass(numpy.array(data_centerline[:, :, z_centerline[iz]]))
-    # create 2d masks
-    file_mask = 'data_mask'
-    for iz in range(nz):
-        center = numpy.array([cx[iz], cy[iz]])
-        mask2d = create_mask2d(center, param.shape, param.size, nx, ny)
-        # Write NIFTI volumes
-        img = nibabel.Nifti1Image(mask2d, None, hdr)
-        nibabel.save(img, (file_mask+str(iz)+'.nii'))
-    # merge along Z
-    cmd = 'fslmerge -z mask '
-    for iz in range(nz):
-        cmd = cmd + file_mask+str(iz)+' '
-    status, output = sct.run(cmd, param.verbose)
-    # copy geometry
-    sct.run(fsloutput+'fslcpgeom data mask', param.verbose)
-    # sct.run('fslchfiletype NIFTI mask', param.verbose)
-
-    # come back to parent folder
-    os.chdir('..')
-
-    # Generate output files
-    sct.printv('\nGenerate output files...', param.verbose)
-    sct.generate_output_file(path_tmp+'mask.nii.gz', param.fname_out)
-
-    # Remove temporary files
-    if param.remove_tmp_files == 1:
-        sct.printv('\nRemove temporary files...', param.verbose)
-        sct.run('rm -rf '+path_tmp, param.verbose)
-
-    # to view results
-    sct.printv('\nDone! To view results, type:', param.verbose)
-    sct.printv('fslview '+param.fname_data+' '+param.fname_out+' -l Red -t 0.5 &', param.verbose, 'info')
-    print
-
-
-# create_line
-# ==========================================================================================
-def create_line(fname, coord, nz):
-
-    # duplicate volume (assumes input file is nifti)
-    sct.run('cp '+fname+' line.nii', param.verbose)
-
-    # set all voxels to zero
-    sct.run('isct_c3d line.nii -scale 0 -o line.nii', param.verbose)
-
-    cmd = 'sct_label_utils -i line.nii -o line.nii -t add -x '
-    for iz in range(nz):
-        if iz == nz-1:
-            cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1'
+        if self.rm_output_file == 1:
+            try:
+                os.remove(self.output_file)
+            except OSError:
+                sct.printv("WARNING : Couldn't remove output file. Either it is opened elsewhere or "
+                           "it doesn't exist.", 0, 'warning')
         else:
-            cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1:'
+            # Complete message
+            sct.printv('\nDone! To view results, type:', self.verbose)
+            sct.printv("fslview "+self.output_file+" &\n", self.verbose, 'info')
 
-    sct.run(cmd, param.verbose)
-
-    return 'line.nii'
-
-
-# create_mask2d
-# ==========================================================================================
-def create_mask2d(center, shape, size, nx, ny):
-
-    # initialize 2d grid
-    xx, yy = numpy.mgrid[:nx, :ny]
-    mask2d = numpy.zeros((nx, ny))
-    xc = center[0]
-    yc = center[1]
-    radius = round(float(size+1)/2)  # add 1 because the radius includes the center.
-
-    if shape == 'box':
-        mask2d[xc-radius:xc+radius+1, yc-radius:yc+radius+1] = 1
-
-    elif shape == 'cylinder':
-        mask2d = ((xx-xc)**2 + (yy-yc)**2 <= radius**2)*1
-
-    elif shape == 'gaussian':
-        sigma = float(radius)
-        mask2d = numpy.exp(-(((xx-xc)**2)/(2*(sigma**2)) + ((yy-yc)**2)/(2*(sigma**2))))
-
-    # import matplotlib.pyplot as plt
-    # plt.imshow(mask2d)
-    # plt.show()
-
-    return mask2d
-
-# Print usage
-# ==========================================================================================
-def usage():
-    print """
-"""+os.path.basename(__file__)+"""
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Part of the Spinal Cord Toolbox <https://sourceforge.net/projects/spinalcordtoolbox>
-
-DESCRIPTION
-  Create mask along z direction.
-
-USAGE
-  """+os.path.basename(__file__)+""" -i <data> -m <method,val> -s <size>
-
-MANDATORY ARGUMENTS
-  -i <data>        image to create mask on. Only used to get header. Must be 3D.
-
-OPTIONAL ARGUMENTS
-  -m <method,val>  method to generate mask and associated value. Default="""+str(param_default.method)+"""
-                     coord: X,Y coordinate of center of mask. E.g.: coord,20x15
-                     point: volume that contains a single point. E.g.: point,label.nii.gz
-                     center: mask is created at center of FOV. In that case, "val" is not required.
-                     centerline: volume that contains centerline. E.g.: centerline,my_centerline.nii
-  -s <size>        size in voxel. Odd values are better (for mask to be symmetrical). Default="""+str(param_default.size)+"""
-                   If shape=gaussian, size corresponds to "sigma". 
-  -f {box,cylinder,gaussian}  shape of the mask. Default="""+str(param_default.shape)+"""
-  -o <output>      name of output mask. Default is "mask_INPUTFILE".
-  -r {0,1}         remove temporary files. Default="""+str(param_default.remove_tmp_files)+"""
-  -v {0,1}         verbose. Default="""+str(param_default.verbose)+"""
-  -h               help. Show this message
-
-EXAMPLE
-  """+os.path.basename(__file__)+""" -i dwi_mean.nii -m coord,35x42 -s 20 -f box\n"""
-
-    # exit program
-    sys.exit(2)
+        return self.result
 
 
-#=======================================================================================================================
-# Start program
-#=======================================================================================================================
+    # create_line
+    # ==========================================================================================
+    def create_line(self, fname, coord, nz):
+
+        # duplicate volume (assumes input file is nifti)
+        sct.run('cp '+fname+' line.nii', self.verbose)
+        # set all voxels to zero
+        sct.run('isct_c3d line.nii -scale 0 -o line.nii', self.verbose)
+        # loop across z and create a voxel at a given XY coordinate
+        cmd = 'sct_label_utils -i line.nii -o line.nii -t add -x '
+        # for iz in range(nz):
+        #     sct.run('sct_label_utils -i line.nii -o line.nii -t add -x '+str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1', self.verbose)
+        for iz in range(nz):
+            if iz == nz-1:
+                cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1'
+            else:
+                cmd += str(int(coord[0]))+','+str(int(coord[1]))+','+str(iz)+',1:'
+
+        sct.run(cmd, self.verbose)
+        return 'line.nii'
+
+    # create_mask2d
+    # ==========================================================================================
+    def create_mask2d(self, center, shape, size, nx, ny):
+
+        # initialize 2d grid
+        xx, yy = numpy.mgrid[:nx, :ny]
+        mask2d = numpy.zeros((nx, ny))
+        xc = center[0]
+        yc = center[1]
+        radius = round(float(size+1)/2)  # add 1 because the radius includes the center.
+
+        if shape == 'box':
+            mask2d[xc-radius:xc+radius+1, yc-radius:yc+radius+1] = 1
+
+        elif shape == 'cylinder':
+            mask2d = ((xx-xc)**2 + (yy-yc)**2 <= radius**2)*1
+
+        elif shape == 'gaussian':
+            sigma = float(radius)
+            mask2d = numpy.exp(-(((xx-xc)**2)/(2*(sigma**2)) + ((yy-yc)**2)/(2*(sigma**2))))
+
+        # import matplotlib.pyplot as plt
+        # plt.imshow(mask2d)
+        # plt.show()
+
+        return mask2d
+
+def get_parser():
+    # Initialize parser,
+    parser = Parser(__file__)
+
+    parser.usage.set_description('Creates a mask with a specific method and shape and returns it as a file')
+    parser.add_option(name="-i",
+                      type_value="image_nifti",
+                      description="input image.",
+                      mandatory=True,
+                      example="t2.nii.gz")
+    parser.add_option(name="-m",
+                      type_value='str',
+                      description="""method to generate mask and associated value.\ncoord: X,Y coordinate of center of mask. E.g.: coord,20x15\npoint: volume that contains a single point. E.g.: point,label.nii.gz\ncenter: mask is created at center of FOV. In that case, "val" is not required.\ncenterline: volume that contains centerline. E.g.: centerline,my_centerline.nii")""",
+                      mandatory=False,
+                      default_value=Mask.DEFAULT_METHOD)
+    parser.add_option(name="-s",
+                      type_value="int",
+                      description="size in voxel. Odd values are better (for mask to be symmetrical).If shape=gaussian, size corresponds to sigma",
+                      mandatory=False,
+                      default_value=Mask.DEFAULT_SIZE,
+                      example="41")
+    parser.add_option(name="-f",
+                      type_value="str",
+                      description="shape of the mask.",
+                      mandatory=False,
+                      default_value=Mask.DEFAULT_SHAPE,
+                      example="gaussian")
+    parser.add_option(name="-o",
+                      type_value="file_output",
+                      description="output image.",
+                      mandatory=False,
+                      example="test.nii.gz")
+    parser.add_option(name="-r",
+                      type_value="multiple_choice",
+                      description="Remove temporary files.",
+                      mandatory=False,
+                      default_value=1,
+                      example=['0', '1'])
+    parser.add_option(name="-v",
+                      type_value="multiple_choice",
+                      description="Verbose",
+                      mandatory=False,
+                      default_value=0,
+                      example=['0', '1'])
+
+    return parser
+
 if __name__ == "__main__":
-    param = Param()
-    param_default = Param()
-    main()
+
+    parser = get_parser()
+
+    # Fetching script arguments
+    arguments = parser.parse(sys.argv[1:])
+
+    input_filename = arguments["-i"]
+    mask = Mask(input_filename)
+
+    # Handling arguments
+    if "-o" in arguments:
+        mask.output_file = arguments["-o"]
+    if "-m" in arguments:
+        method_list = arguments["-m"].replace(' ', '').split(',')
+        mask.method = method_list[0]
+        if len(method_list) == 2:
+            mask.method_value = method_list[1]
+        elif len(method_list) > 2:
+            sct.printv("Seperate the method by its values with only 1 coma.", "warning")
+    if "-f" in arguments:
+        mask.shape = arguments["-f"]
+    if "-s" in arguments:
+        mask.size = arguments["-s"]
+    if "-r" in arguments:
+        mask.rm_tmp_files = arguments["-r"]
+    if "-v" in arguments:
+        mask.verbose = arguments["-v"]
+
+    mask.create_mask()
+
+

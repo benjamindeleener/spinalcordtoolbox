@@ -176,8 +176,7 @@ class Transform:
         sct.printv('\nDone! To view results, type:', verbose)
         sct.printv('fslview '+fname_dest+' '+fname_out+' &\n', verbose, 'info')
 
-
-if __name__ == "__main__":
+def get_parser():
 
     # Initialize parser
     parser = Parser(__file__)
@@ -217,6 +216,12 @@ if __name__ == "__main__":
                       mandatory=False,
                       default_value='spline',
                       example=['nn','linear','spline'])
+
+    return parser
+
+if __name__ == "__main__":
+
+    parser = get_parser()
 
     arguments = parser.parse(sys.argv[1:])
 
