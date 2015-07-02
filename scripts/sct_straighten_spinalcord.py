@@ -110,7 +110,6 @@ def smooth_centerline(fname_centerline, algo_fitting='hanning', type_window='han
         from msct_smooth import b_spline_nurbs
         x_centerline_fit, y_centerline_fit, z_centerline_fit, x_centerline_deriv, y_centerline_deriv, z_centerline_deriv = b_spline_nurbs(x_centerline, y_centerline, z_centerline, nbControl=None, verbose=verbose)
 
-
     else:
         sct.printv('ERROR: wrong algorithm for fitting',1,'error')
 
@@ -134,11 +133,14 @@ class SpinalCordStraightener(Algorithm):
         self.window_length = window_length
         self.crop = crop
 
-        self.bspline_meshsize = bspline_meshsize
-        self.bspline_numberOfLevels = bspline_numberOfLevels
-        self.bspline_order = bspline_order
-        self.algo_landmark_rigid =algo_landmark_rigid
-        self.all_labels = all_labels
+
+        self.bspline_meshsize = '5x5x10'
+        self.bspline_numberOfLevels = '3'
+        self.bspline_order = '2'
+        self.algo_landmark_rigid = None
+        self.all_labels = 0
+        self.use_continuous_labels = 0
+
 
         self.mse_straightening = 0.0
         self.max_distance_straightening = 0.0
@@ -163,7 +165,7 @@ class SpinalCordStraightener(Algorithm):
 
         # get path of the toolbox
         status, path_sct = commands.getstatusoutput('echo $SCT_DIR')
-        print path_sct
+        sct.printv(path_sct, verbose)
 
         if self.debug == 1:
             print '\n*** WARNING: DEBUG MODE ON ***\n'
@@ -174,16 +176,16 @@ class SpinalCordStraightener(Algorithm):
             verbose = 2
 
         # check existence of input files
-        sct.check_file_exist(fname_anat)
-        sct.check_file_exist(fname_centerline)
+        sct.check_file_exist(fname_anat, verbose)
+        sct.check_file_exist(fname_centerline, verbose)
 
         # Display arguments
-        print '\nCheck input arguments...'
-        print '  Input volume ...................... '+fname_anat
-        print '  Centerline ........................ '+fname_centerline
-        print '  Final interpolation ............... '+interpolation_warp
-        print '  Verbose ........................... '+str(verbose)
-        print ''
+        sct.printv('\nCheck input arguments...', verbose)
+        sct.printv('  Input volume ...................... '+fname_anat, verbose)
+        sct.printv('  Centerline ........................ '+fname_centerline, verbose)
+        sct.printv('  Final interpolation ............... '+interpolation_warp, verbose)
+        sct.printv('  Verbose ........................... '+str(verbose), verbose)
+        sct.printv('', verbose)
 
         # Extract path/file/extension
         path_anat, file_anat, ext_anat = sct.extract_fname(fname_anat)
@@ -346,6 +348,12 @@ class SpinalCordStraightener(Algorithm):
                         landmark_straight.append(Coordinate([x0, y0, iz, landmark_curved_value]))
                         landmark_curved_value += 1
 
+            # Writting landmark curve in text file
+            landmark_straight_file = open("LandmarksRealStraight.txt", "w+")
+            for i in landmark_straight:
+                landmark_straight_file.write(str(i.x + padding)+","+str(i.y + padding)+","+str(i.z + padding)+"\n")
+            landmark_straight_file.close()
+
             # Create NIFTI volumes with landmarks
             #==========================================================================================
             # Pad input volume to deal with the fact that some landmarks on the curved centerline might be outside the FOV
@@ -359,6 +367,7 @@ class SpinalCordStraightener(Algorithm):
             file = load('tmp.centerline_pad.nii.gz')
             data = file.get_data()
             hdr = file.get_header()
+            landmark_curved_rigid = []
 
             if self.algo_landmark_rigid is not None and self.algo_landmark_rigid != 'None':
                 # Reorganize landmarks
@@ -374,8 +383,8 @@ class SpinalCordStraightener(Algorithm):
                 (rotation_matrix, translation_array, points_moving_reg) = msct_register_landmarks.getRigidTransformFromLandmarks(
                     points_fixed, points_moving, constraints=self.algo_landmark_rigid, show=False)
 
-                # reorganize registered points
-                landmark_curved_rigid = []
+                # reorganize registered pointsx
+
                 for index_curved, ind in enumerate(range(0, len(points_moving_reg), 1)):
                     coord = Coordinate()
                     coord.x, coord.y, coord.z, coord.value = points_moving_reg[ind][0], points_moving_reg[ind][1], points_moving_reg[ind][2], index_curved+1
@@ -524,6 +533,12 @@ class SpinalCordStraightener(Algorithm):
                 ax.set_zlabel('z')
                 plt.show()
 
+            # Writting landmark curve in text file
+            landmark_curved_file = open("LandmarksRealCurve.txt", "w+")
+            for i in landmark_curved_rigid:
+                landmark_curved_file.write(str(i.x + padding)+","+str(i.y + padding)+","+str(i.z + padding)+"\n")
+            landmark_curved_file.close()
+
             # This stands to avoid overlapping between landmarks
             sct.printv('\nMake sure all labels between landmark_curved and landmark_curved match...', verbose)
             label_process = ProcessLabels(fname_label="tmp.landmarks_straight.nii.gz",
@@ -537,12 +552,15 @@ class SpinalCordStraightener(Algorithm):
 
             # Estimate b-spline transformation curve --> straight
             sct.printv('\nEstimate b-spline transformation: curve --> straight...', verbose)
-            sct.run('isct_ANTSUseLandmarkImagesToGetBSplineDisplacementField tmp.landmarks_straight.nii.gz tmp.landmarks_curved_rigid.nii.gz tmp.warp_curve2straight.nii.gz '+str(self.bspline_meshsize)+' '+str(self.bspline_numberOfLevels)+' '+str(self.bspline_order)+' 0', self.verbose)
+
+            if (self.use_continuous_labels == 1 and self.algo_landmark_rigid is not None and self.algo_landmark_rigid != "None") or self.use_continuous_labels=='1':
+                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetBSplineDisplacementField tmp.landmarks_straight.nii.gz tmp.landmarks_curved_rigid.nii.gz tmp.warp_curve2straight.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' LandmarksRealCurve.txt LandmarksRealStraight.txt '+self.bspline_order+' 0', verbose)
+            else:
+                sct.run('isct_ANTSUseLandmarkImagesToGetBSplineDisplacementField tmp.landmarks_straight.nii.gz tmp.landmarks_curved_rigid.nii.gz tmp.warp_curve2straight.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' '+self.bspline_order+' 0', verbose)
 
             # remove padding for straight labels
             if crop == 1:
                 ImageCropper(input_image="tmp.landmarks_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", dim="0,1,2", bmax=True, verbose=verbose).execute()
-                pass
             else:
                 sct.run('cp tmp.landmarks_straight.nii.gz tmp.landmarks_straight_crop.nii.gz', verbose)
 
@@ -558,7 +576,11 @@ class SpinalCordStraightener(Algorithm):
             # Estimate b-spline transformation straight --> curve
             # TODO: invert warping field instead of estimating a new one
             sct.printv('\nEstimate b-spline transformation: straight --> curve...', verbose)
-            sct.run('isct_ANTSUseLandmarkImagesToGetBSplineDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz tmp.warp_straight2curve.nii.gz '+str(self.bspline_meshsize)+' '+str(self.bspline_numberOfLevels)+' '+str(self.bspline_order)+' 0', self.verbose)
+
+            if (self.use_continuous_labels == 1 and self.algo_landmark_rigid is not None and self.algo_landmark_rigid != "None") or self.use_continuous_labels=='1':
+                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetBSplineDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz tmp.warp_straight2curve.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' LandmarksRealCurve.txt LandmarksRealStraight.txt '+self.bspline_order+' 0', verbose)
+            else:
+                sct.run('isct_ANTSUseLandmarkImagesToGetBSplineDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz tmp.warp_straight2curve.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' '+self.bspline_order+' 0', verbose)
 
             # Concatenate rigid and non-linear transformations...
             sct.printv('\nConcatenate rigid and non-linear transformations...', verbose)
@@ -576,7 +598,9 @@ class SpinalCordStraightener(Algorithm):
             # Apply deformation to input image
             sct.printv('\nApply transformation to centerline image...', verbose)
             # sct.run('sct_apply_transfo -i '+fname_centerline_orient+' -o tmp.centerline_straight.nii.gz -d tmp.landmarks_straight_crop.nii.gz -x nn -w tmp.curve2straight.nii.gz')
+
             ApplyTransfo(input_image=fname_centerline_orient, source_reg="tmp.centerline_straight.nii.gz", output_filename="tmp.landmarks_straight_crop.nii.gz", interp="nn", warp="tmp.curve2straight.nii.gz", verbose=verbose).execute()
+
             #c = sct.run('sct_crop_image -i tmp.centerline_straight.nii.gz -o tmp.centerline_straight_crop.nii.gz -dim 2 -bzmax')
             from msct_image import Image
             file_centerline_straight = Image('tmp.centerline_straight.nii.gz', verbose=verbose)
@@ -629,6 +653,7 @@ class SpinalCordStraightener(Algorithm):
         sct.printv('\nFinished! Elapsed time: '+str(int(round(elapsed_time)))+'s', verbose)
         sct.printv('\nTo view results, type:', verbose)
         sct.printv('fslview '+fname_straight+' &\n', verbose, 'info')
+
 if __name__ == "__main__":
     # Initialize parser
     parser = Parser(__file__)
@@ -668,9 +693,9 @@ if __name__ == "__main__":
                       description="remove temporary files.",
                       mandatory=False,
                       example=['0', '1'],
-                      default_value='0')
+                      default_value='1')
     parser.add_option(name="-a",
-                      type_value="str",
+                      type_value="multiple_choice",
                       description="Algorithm for curve fitting.",
                       mandatory=False,
                       example=["hanning", "nurbs"],
@@ -687,6 +712,12 @@ if __name__ == "__main__":
                       mandatory=False,
                       example=['0', '1', '2'],
                       default_value=1)
+
+    parser.add_option(name="-params",
+                      type_value=[[','], 'str'],
+                      description="""Parameters for spinal cord straightening. Separate arguments with ",".\nuse_continuous_labels : 0,1. Default = False\nalgo_fitting: {hanning,nurbs} algorithm for curve fitting. Default=hanning\nbspline_meshsize: <int>x<int>x<int> size of mesh for B-Spline registration. Default=5x5x10\nbspline_numberOfLevels: <int> number of levels for BSpline interpolation. Default=3\nbspline_order: <int> Order of BSpline for interpolation. Default=2\nalgo_landmark_rigid {rigid,xy,translation,translation-xy,rotation,rotation-xy} constraints on landmark-based rigid pre-registration""",
+                      mandatory=False,
+                      example="algo_fitting=nurbs,bspline_meshsize=5x5x12,algo_landmark_rigid=xy")
 
     arguments = parser.parse(sys.argv[1:])
 
@@ -712,4 +743,25 @@ if __name__ == "__main__":
     if "-v" in arguments:
         sc_straight.verbose = int(arguments["-v"])
 
+    if "-params" in arguments:
+        params_user = arguments['-params']
+        # update registration parameters
+        for param in params_user:
+            param_split = param.split('=')
+            if param_split[0] == 'algo_fitting':
+                sc_straight.algo_fitting = param_split[1]
+            elif param_split[0] == 'bspline_meshsize':
+                sc_straight.bspline_meshsize = param_split[1]
+            elif param_split[0] == 'bspline_numberOfLevels':
+                sc_straight.bspline_numberOfLevels = param_split[1]
+            elif param_split[0] == 'bspline_order':
+                sc_straight.bspline_order = param_split[1]
+            elif param_split[0] == 'algo_landmark_rigid':
+                sc_straight.algo_landmark_rigid = param_split[1]
+            elif param_split[0] == 'all_labels':
+                sc_straight.all_labels = int(param_split[1])
+            elif param_split[0] == 'use_continuous_labels':
+                sc_straight.use_continuous_labels = int(param_split[1])
+
     sc_straight.execute()
+

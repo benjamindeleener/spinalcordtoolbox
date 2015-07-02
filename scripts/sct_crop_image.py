@@ -90,7 +90,7 @@ class ImageCropper(Algorithm):
         # Run command line
         sct.run(self.cmd, verb)
 
-        result = Image(self.output_filename)
+        self.result = Image(self.output_filename, verbose=self.verbose)
 
         # removes the output file created by the script if it is not needed
         if not self.produce_output:
@@ -98,17 +98,17 @@ class ImageCropper(Algorithm):
                 os.remove(self.output_filename)
             except OSError:
                 sct.printv("WARNING : Couldn't remove output file. Either it is opened elsewhere or "
-                           "it doesn't exist.", 0, 'warning')
+                           "it doesn't exist.", self.verbose, 'warning')
         else:
             # Complete message
             sct.printv('\nDone! To view results, type:', self.verbose)
             sct.printv("fslview "+self.output_filename+" &\n", self.verbose, 'info')
 
-        return result
+        return self.result
 
     def crop_with_gui(self):
         # Initialization
-        fname_data = self.input_filename
+        fname_data = self.input_image
         suffix_out = '_crop'
         remove_temp_files = self.rm_tmp_files
         verbose = self.verbose
@@ -118,7 +118,7 @@ class ImageCropper(Algorithm):
 
         # Check file existence
         sct.printv('\nCheck file existence...', verbose)
-        sct.check_file_exist(fname_data)
+        sct.check_file_exist(fname_data, verbose)
 
         # Get dimensions of data
         sct.printv('\nGet dimensions of data...', verbose)

@@ -240,6 +240,7 @@ def test_function(script_name):
         script_name = "test_"+script_name
         sct.create_folder(result_folder)
         os.chdir(result_folder)
+        status = 1
         try:
             # display script name
             print_line('Checking '+script_name)
@@ -256,8 +257,8 @@ def test_function(script_name):
                 print output
             # log file
             write_to_log_file(fname_log, output, 'w')
-        except:
-            pass
+        except Exception, e:
+            print e.message
         # go back to parent folder
         os.chdir('..')
         # end while loop
