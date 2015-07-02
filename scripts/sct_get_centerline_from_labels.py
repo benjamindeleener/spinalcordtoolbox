@@ -16,7 +16,7 @@ import time
 import sct_utils as sct
 from sct_process_segmentation import extract_centerline
 from sct_orientation import get_orientation
-from sct_class.SpinalCordStraightener import smooth_centerline
+from sct_straighten_spinalcord import smooth_centerline
 
 # DEFAULT PARAMETERS
 class Param:

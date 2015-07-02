@@ -2,6 +2,9 @@
 # TODO : Implement produce_output in the different algorithms
 
 class Algorithm(object):
+    """
+    Algorithm is the base class for al algorithm scripts
+    """
 
     def __init__(self, input_image, produce_output=1, verbose=1):
         self._input_image = input_image
