@@ -201,12 +201,13 @@ class Option:
         else:
             sct.printv("ERROR : File is not a NIFTI image file. Exiting", type='error')
 
-        if nii:
+        if nii and niigz:
+            return param_tmp+'.nii.gz'
+        elif nii:
             return param_tmp+'.nii'
         elif niigz:
             return param_tmp+'.nii.gz'
-        if nii and niigz:
-            return param_tmp+'.nii.gz'
+
 
 
     def checkFolder(self, param):
