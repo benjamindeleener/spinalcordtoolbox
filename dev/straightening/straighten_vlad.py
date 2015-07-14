@@ -37,13 +37,8 @@ class VladStraighten(object):
         fname_seg_nii = str(fname_seg).replace(".gz", "")
         fname_seg_mnc = str(fname_seg_nii).replace(".nii", ".mnc")
 
-        cmd = "sct_propseg -i "+fname_in+" -t t2 -o . -init 140"
+        cmd = "sct_propseg -i "+fname_in+" -t t2 -o ."
         output = commands.getoutput(cmd)
-
-        if str(output) == "0":
-            raise Exception(str(output))
-        else:
-            sct.printv(output)
 
         if str(fname_in).endswith(".gz"):
             cmd = "gunzip -c "+self.input_image+" >"+fname_nii
@@ -74,6 +69,7 @@ class VladStraighten(object):
 
             raise Exception(str(output))
 
+        sct.printv(output)
         cmd = "mnc2nii "+mnc_out
         output = commands.getoutput(cmd)
 
