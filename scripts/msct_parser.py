@@ -157,10 +157,7 @@ class Option:
             sub_type = type_option[1]
             param_splitted = param.split(delimiter)
             if len(param_splitted) != 0:
-                if len(param_splitted) == 1:
-                    return [self.check_integrity(val, sub_type) for val in param_splitted]
-                else:
-                    return list([self.check_integrity(val, sub_type) for val in param_splitted])
+                return list([self.check_integrity(val, sub_type) for val in param_splitted])
             else:
                 self.parser.usage.error("ERROR: Option "+self.name+" must be correctly written. See usage.")
 

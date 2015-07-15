@@ -22,9 +22,11 @@ from sct_crop_image import ImageCropper
 from msct_base_classes import Algorithm
 
 
+
 class ApplyTransfo(Algorithm):
-    def __init__(self, input_image, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0, produce_output=1):
+    def __init__(self, input_image, warp, output_filename, source_reg='', verbose=0, crop=0, interp='spline', debug=0, produce_output=1, remove_temp_files=1):
         super(ApplyTransfo, self).__init__(input_image, produce_output, verbose)
+
         if isinstance(warp, str):
             self.warp_input = list([warp])
         else:
@@ -34,6 +36,7 @@ class ApplyTransfo(Algorithm):
         self.source_reg = source_reg
         self.crop = crop
         self.verbose = verbose
+        self.remove_temp_files = remove_temp_files
         self.debug = debug
 
     def execute(self):
@@ -43,6 +46,7 @@ class ApplyTransfo(Algorithm):
         fname_dest = self.output_filename  # destination image (fix)
         fname_src_reg = self.source_reg
         verbose = self.verbose
+        remove_temp_files = self.remove_temp_files
         fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '  # for faster processing, all outputs are in NIFTI
         crop_reference = self.crop  # if = 1, put 0 everywhere around warping field, if = 2, real crop
 
@@ -96,6 +100,7 @@ class ApplyTransfo(Algorithm):
 
         # Extract path, file and extension
         path_src, file_src, ext_src = sct.extract_fname(fname_src)
+        path_dest, file_dest, ext_dest = sct.extract_fname(fname_dest)
 
         # Get output folder and file name
         if fname_src_reg == '':
@@ -129,6 +134,9 @@ class ApplyTransfo(Algorithm):
             # NB: cannot use c3d here because c3d cannot convert 4D data.
             sct.printv('\nCopying input data to tmp folder and convert to nii...', verbose)
             sct.run('cp '+fname_src+' '+path_tmp+'data'+ext_src, verbose)
+            sct.run('cp '+fname_dest+' '+path_tmp+'dest'+ext_dest, verbose)
+            for i,warp in enumerate(fname_warp_list_invert):
+                sct.run('cp ' + warp + ' ' + path_tmp + warp, verbose)
             # go to tmp folder
             os.chdir(path_tmp)
             try:
@@ -143,11 +151,12 @@ class ApplyTransfo(Algorithm):
                 for it in range(nt):
                     file_data_split = 'data_T'+str(it).zfill(4)+'.nii'
                     file_data_split_reg = 'data_reg_T'+str(it).zfill(4)+'.nii'
-                    sct.run('isct_antsApplyTransforms -d 3 -i '+file_data_split+' -o '+file_data_split_reg+' -t '+' '.join(fname_warp_list_invert)+' -r '+fname_dest+interp, verbose)
+                    sct.run('isct_antsApplyTransforms -d 3 -i '+file_data_split+' -o '+file_data_split_reg+' -t '+' '.join(fname_warp_list_invert)+' -r dest'+ext_dest+interp, verbose)
 
                 # Merge files back
                 sct.printv('\nMerge file back...', verbose)
-                cmd = fsloutput+'fslmerge -t '+fname_out
+                #cmd = fsloutput+'fslmerge -t '+fname_out
+                cmd = 'fslmerge -t '+fname_out
                 for it in range(nt):
                     file_data_split_reg = 'data_reg_T'+str(it).zfill(4)+'.nii'
                     cmd = cmd+' '+file_data_split_reg
@@ -155,8 +164,16 @@ class ApplyTransfo(Algorithm):
 
             except:
                 pass
+            # Copy result to parent folder
+            sct.run('cp ' + fname_out + ' ../' + fname_out)
+
             # come back to parent folder
             os.chdir('..')
+
+            # Delete temporary folder if specified
+            if int(remove_temp_files):
+                sct.printv('\nRemove temporary files...', verbose)
+                sct.run('rm -rf '+path_tmp, verbose)
 
         # 2. crop the resulting image using dimensions from the warping field
         warping_field = fname_warp_list_invert[-1]
@@ -213,6 +230,18 @@ if __name__ == "__main__":
                       mandatory=False,
                       default_value='spline',
                       example=['nn','linear','spline'])
+    parser.add_option(name="-r",
+                      type_value="multiple_choice",
+                      description="""Remove temporary files.""",
+                      mandatory=False,
+                      default_value='1',
+                      example=['0', '1'])
+    parser.add_option(name="-v",
+                      type_value="multiple_choice",
+                      description="""Verbose.""",
+                      mandatory=False,
+                      default_value='0',
+                      example=['0', '1', '2'])
 
     arguments = parser.parse(sys.argv[1:])
 
@@ -228,5 +257,9 @@ if __name__ == "__main__":
         transform.source_reg = arguments["-o"]
     if "-x" in arguments:
         transform.interp = arguments["-x"]
+    if "-r" in arguments:
+        transform.remove_temp_files = arguments["-r"]
+    if "-v" in arguments:
+        transform.verbose = arguments["-v"]
 
     transform.execute()

@@ -238,7 +238,7 @@ class Image(object):
         """
         from msct_types import Coordinate
 
-        X, Y, Z = (self.data > 0).nonzero()
+        X, Y, Z = (self.data > 0.0).nonzero()
         list_coordinates = [Coordinate([X[i], Y[i], Z[i], self.data[X[i], Y[i], Z[i]]]) for i in range(0, len(X))]
 
         if sorting is not None:
@@ -475,7 +475,19 @@ class Image(object):
             return coordi_pix_list
 
 
+def pad_image(fname_in, file_out, padding):
+    import sct_utils as sct
+    sct.run('isct_c3d '+fname_in+' -pad 0x0x'+str(padding)+'vox 0x0x'+str(padding)+'vox 0 -o '+file_out, 1)
+    return
 
+
+def find_zmin_zmax(fname):
+    import sct_utils as sct
+    # crop image
+    status, output = sct.run('sct_crop_image -i '+fname+' -dim 2 -bmax -o tmp.nii')
+    # parse output
+    zmin, zmax = output[output.find('Dimension 2: ')+13:].split('\n')[0].split(' ')
+    return int(zmin), int(zmax)
 
 
 # =======================================================================================================================

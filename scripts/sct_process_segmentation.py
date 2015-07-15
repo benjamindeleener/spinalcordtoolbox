@@ -30,9 +30,22 @@ from sct_orientation import get_orientation, set_orientation
 from msct_base_classes import Algorithm, BaseScript
 from msct_parser import Parser
 
-#=======================================================================================================================
+# =======================================================================================================================
+# create text file info_label.txt
+# =======================================================================================================================
+def create_info_label(file_name, path_folder, fname_seg):
+
+    os.chdir(path_folder)
+    file_info_label = open(file_name, 'w')
+    file_info_label.write('# Spinal cord segmentation\n')
+    file_info_label.write('# ID, name, file\n')
+    file_info_label.write('0, mean CSA, '+fname_seg)
+    file_info_label.close()
+    os.chdir('..')
+
+# =======================================================================================================================
 # b_spline_centerline
-#=======================================================================================================================
+# =======================================================================================================================
 def b_spline_centerline(x_centerline,y_centerline,z_centerline):
 
     print '\nFitting centerline using B-spline approximation...'
@@ -50,18 +63,18 @@ def b_spline_centerline(x_centerline,y_centerline,z_centerline):
     return x_centerline_fit, y_centerline_fit,x_centerline_deriv,y_centerline_deriv,z_centerline_deriv
 
 
-#=======================================================================================================================
+# =======================================================================================================================
 # Normalization
-#=======================================================================================================================
+# =======================================================================================================================
 def normalize(vect):
     norm=np.linalg.norm(vect)
     return vect/norm
 
 
-#=======================================================================================================================
+# =======================================================================================================================
 # Ellipse fitting for a set of data
-#=======================================================================================================================
-#http://nicky.vanforeest.com/misc/fitEllipse/fitEllipse.html
+# =======================================================================================================================
+# http://nicky.vanforeest.com/misc/fitEllipse/fitEllipse.html
 def Ellipse_fit(x,y):
     x = x[:,np.newaxis]
     y = y[:,np.newaxis]
@@ -252,19 +265,6 @@ def extract_centerline(fname_segmentation, remove_temp_files, verbose = 0, algo_
         sct.run('rm -rf '+path_tmp, verbose)
 
     return file_data+'_centerline'+ext_data
-
-#=======================================================================================================================
-# create text file info_label.txt
-#=======================================================================================================================
-def create_info_label(file_name, path_folder, fname_seg):
-
-    os.chdir(path_folder)
-    file_info_label = open(file_name, 'w')
-    file_info_label.write('# Spinal cord segmentation\n')
-    file_info_label.write('# ID, name, file\n')
-    file_info_label.write('0, mean CSA, '+fname_seg)
-    file_info_label.close()
-    os.chdir('..')
 
 
 class ProcessSegmentation(Algorithm):
@@ -686,6 +686,7 @@ class ScriptProcessSegmentation(BaseScript):
             sc_process.verbose = str(arguments["-a"])
 
         sc_process.execute()
+
 
 if __name__ == "__main__":
     script = ScriptProcessSegmentation()

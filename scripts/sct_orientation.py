@@ -48,7 +48,6 @@ class OrientationScript(BaseScript):
         parser.add_option(name="-s",
                           type_value="multiple_choice",
                           description="Desired orientation",
-                          default_value="None",
                           mandatory=False,
                           example=['None', 'RIP', 'LIP', 'RSP', 'LSP', 'RIA', 'LIA', 'RSA', 'LSA', 'IRP', 'ILP', 'SRP', 'SLP', 'IRA', 'ILA', 'SRA', 'SLA', 'RPI', 'LPI', 'RAI', 'LAI', 'RPS', 'LPS', 'RAS', 'LAS', 'PRI' 'PLI', 'ARI', 'ALI', 'PRS', 'PLS', 'ARS', 'ALS', 'IPR', 'SPR', 'IAR', 'SAR', 'IPL', 'SPL', 'IAL', 'SAL', 'PIR', 'PSR', 'AIR', 'ASR', 'PIL', 'PSL', 'AIL', 'ASL'])
         parser.add_option(name="-a",
@@ -112,7 +111,7 @@ def get_or_set_orientation():
         todo = 'set_orientation'
         # check if orientation is correct
         if check_orientation_input():
-            sct.printv('\nERROR in '+os.path.basename(__file__)+': orientation is not recognized. Use one of the following orientation: '+param.list_of_correct_orientation+'\n', 1, 'error')
+            sct.printv('\nERROR in '+os.path.basename(__file__)+': '+param.orientation+' orientation is not recognized. Use one of the following orientation: '+param.list_of_correct_orientation+'\n', 1, 'error')
             sys.exit(2)
 
     # display input parameters
