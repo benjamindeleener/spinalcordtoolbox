@@ -14,26 +14,11 @@
 
 import sys
 import os
-import getopt
-import commands
 import sct_utils as sct
 import time
 from msct_parser import Parser
 from msct_base_classes import BaseScript, Algorithm
 
-class Orientation(Algorithm):
-
-    AVAILABLE_ORIENTATIONS = 'RIP LIP RSP LSP RIA LIA RSA LSA IRP ILP SRP SLP IRA ILA SRA SLA RPI LPI RAI LAI RPS LPS RAS LAS PRI PLI ARI ALI PRS PLS ARS ALS IPR SPR IAR SAR IPL SPL IAL SAL PIR PSR AIR ASR PIL PSL AIL ASL'
-
-    def __init__(self, input_image, orientation = "RPI", output_filename = "oriented.ni.gz", remove_tmp_files = 1, change_header = 1, verbose = 1):
-        super(Orientation, self).__init__(input_image, verbose=verbose)
-        self.orientation = orientation
-        self.remove_tmp_files = remove_tmp_files
-        self.change_header = change_header
-        self.output_filename = output_filename
-
-    def execute(self):
-        pass
 
 class OrientationScript(BaseScript):
     def __init__(self):
@@ -66,15 +51,45 @@ class OrientationScript(BaseScript):
                           default_value="None",
                           mandatory=False,
                           example=['None', 'RIP', 'LIP', 'RSP', 'LSP', 'RIA', 'LIA', 'RSA', 'LSA', 'IRP', 'ILP', 'SRP', 'SLP', 'IRA', 'ILA', 'SRA', 'SLA', 'RPI', 'LPI', 'RAI', 'LAI', 'RPS', 'LPS', 'RAS', 'LAS', 'PRI' 'PLI', 'ARI', 'ALI', 'PRS', 'PLS', 'ARS', 'ALS', 'IPR', 'SPR', 'IAR', 'SAR', 'IPL', 'SPL', 'IAL', 'SAL', 'PIR', 'PSR', 'AIR', 'ASR', 'PIL', 'PSL', 'AIL', 'ASL'])
-        parser.add_option(name="-r",
+        parser.add_option(name="-a",
                           type_value="multiple_choice",
-                          description="Remove temporary files.",
+                          description="actual orientation of image data (for corrupted data). Change the data orientation to match orientation in the header.",
+                          mandatory=False,
+                          example=['None', 'RIP', 'LIP', 'RSP', 'LSP', 'RIA', 'LIA', 'RSA', 'LSA', 'IRP', 'ILP', 'SRP', 'SLP', 'IRA', 'ILA', 'SRA', 'SLA', 'RPI', 'LPI', 'RAI', 'LAI', 'RPS', 'LPS', 'RAS', 'LAS', 'PRI' 'PLI', 'ARI', 'ALI', 'PRS', 'PLS', 'ARS', 'ALS', 'IPR', 'SPR', 'IAR', 'SAR', 'IPL', 'SPL', 'IAL', 'SAL', 'PIR', 'PSR', 'AIR', 'ASR', 'PIL', 'PSL', 'AIL', 'ASL'])
+        parser.add_option(name="-v",
+                          type_value="multiple_choice",
+                          description="Verbose",
                           mandatory=False,
                           default_value=1,
                           example=['0', '1'])
+        return parser
+
+    def main(self):
+
+        parser = self.get_parser()
+
+        arguments = parser.parse(sys.argv[1:])
+
+        param.fname_data = arguments["-i"]
+
+        if "-o" in arguments:
+            param.fname_out = arguments["-o"]
+        if "-r" in arguments:
+            param.remove_tmp_files = int(arguments["-r"])
+        if "-s" in arguments:
+            param.orientation = arguments["-s"]
+        if "-t" in arguments:
+            param.threshold = arguments["-t"]
+        if "-a" in arguments:
+            param.change_header = arguments["-a"]
+        if "-v" in arguments:
+            param.verbose = int(arguments["-v"])
+
+        get_or_set_orientation()
+
 
 class Param:
-    ## The constructorin
+    # The constructor
     def __init__(self):
         self.debug = 0
         self.fname_data = ''
@@ -86,63 +101,9 @@ class Param:
         self.remove_tmp_files = 1
 
 
-# main
-#=======================================================================================================================
-def main():
-
-    # Parameters for debug mode
-    if param.debug:
-        print '\n*** WARNING: DEBUG MODE ON ***\n'
-        # get path of the testing data
-        status, path_sct_data = commands.getstatusoutput('echo $SCT_TESTING_DATA_DIR')
-        param.fname_data = path_sct_data+'/dmri/dwi_moco_mean.nii.gz'
-        param.orientation = ''
-        param.change_header = ''
-        param.remove_tmp_files = 0
-        param.verbose = 1
-    else:
-        # Check input parameters
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], 'hi:o:r:s:a:v:')
-        except getopt.GetoptError:
-            usage()
-        if not opts:
-            usage()
-        for opt, arg in opts:
-            if opt == '-h':
-                usage()
-            elif opt in '-i':
-                param.fname_data = arg
-            elif opt in '-o':
-                param.fname_out = arg
-            elif opt in '-r':
-                param.remove_tmp_files = int(arg)
-            elif opt in '-s':
-                param.orientation = arg
-            elif opt in '-t':
-                param.threshold = arg
-            elif opt in '-a':
-                param.change_header = arg
-            elif opt in '-v':
-                param.verbose = int(arg)
-
-    # run main program
-    get_or_set_orientation()
-
-
-# get_or_set_orientation
-#=======================================================================================================================
 def get_or_set_orientation():
 
     fsloutput = 'export FSLOUTPUTTYPE=NIFTI; '  # for faster processing, all outputs are in NIFTI
-
-    # display usage if a mandatory argument is not provided
-    if param.fname_data == '':
-        sct.printv('ERROR: All mandatory arguments are not provided. See usage.', 1, 'error')
-
-    # check existence of input files
-    sct.printv('\ncheck existence of input files...', param.verbose)
-    sct.check_file_exist(param.fname_data, param.verbose)
 
     # find what to do
     if param.orientation == '' and param.change_header is '':
@@ -288,48 +249,13 @@ def set_orientation(fname_in, orientation, fname_out, inversion=False):
     # return full path
     return os.path.abspath(fname_out)
 
-
-# Print usage
-# ==========================================================================================
-def usage():
-    print """
-"""+os.path.basename(__file__)+"""
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Part of the Spinal Cord Toolbox <https://sourceforge.net/projects/spinalcordtoolbox>
-
-DESCRIPTION
-  Get or set orientation of 3D or 4D data. Available orientations are:
-  """+param_default.list_of_correct_orientation+"""
-
-USAGE
-  Get orientation: """+os.path.basename(__file__)+""" -i <data>
-  Set orientation: """+os.path.basename(__file__)+""" -i <data> -s <orient>
-
-MANDATORY ARGUMENTS
-  -i <file>        image to get or set orientation from. Can be 3D or 4D.
-
-OPTIONAL ARGUMENTS
-  -s <orient>      orientation. Default=None.
-  -o <fname_out>   output file name. Default=<file>_<orient>.<ext>.
-  -a <orient>      actual orientation of image data (for corrupted data). Change the data
-                     orientation to match orientation in the header.
-  -r {0,1}         remove temporary files. Default="""+str(param_default.remove_tmp_files)+"""
-  -v {0,1}         verbose. Default="""+str(param_default.verbose)+"""
-  -h               help. Show this message
-
-EXAMPLE
-  """+os.path.basename(__file__)+""" -i dwi.nii.gz -s RPI\n"""
-
-    # exit program
-    sys.exit(2)
-
-
-#=======================================================================================================================
+# =======================================================================================================================
 # Start program
-#=======================================================================================================================
+# =======================================================================================================================
 if __name__ == "__main__":
     # initialize parameters
     param = Param()
     param_default = Param()
     # call main function
-    main()
+    script = OrientationScript()
+    script.main()
