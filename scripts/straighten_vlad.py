@@ -39,10 +39,10 @@ class VladStraighten(object):
         cmd = "sct_propseg -i "+self.input_image+" -t t2 -o ."
         sct.run(cmd)
 
-        cmd = "sct_orientation -i "+self.input_image+" -s LIA -o "+in_orient
+        cmd = "sct_orientation -i "+self.input_image+" -s RSA -o "+in_orient
         sct.run(cmd)
 
-        cmd = "sct_orientation -i "+fname_seg+" -s LIA -o "+fname_seg_orient
+        cmd = "sct_orientation -i "+fname_seg+" -s RSA -o "+fname_seg_orient
         sct.run(cmd)
 
         if os.path.isfile(niigz_out):
