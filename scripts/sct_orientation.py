@@ -18,11 +18,63 @@ import getopt
 import commands
 import sct_utils as sct
 import time
+from msct_parser import Parser
+from msct_base_classes import BaseScript, Algorithm
 
+class Orientation(Algorithm):
 
-# DEFAULT PARAMETERS
+    AVAILABLE_ORIENTATIONS = 'RIP LIP RSP LSP RIA LIA RSA LSA IRP ILP SRP SLP IRA ILA SRA SLA RPI LPI RAI LAI RPS LPS RAS LAS PRI PLI ARI ALI PRS PLS ARS ALS IPR SPR IAR SAR IPL SPL IAL SAL PIR PSR AIR ASR PIL PSL AIL ASL'
+
+    def __init__(self, input_image, orientation = "RPI", output_filename = "oriented.ni.gz", remove_tmp_files = 1, change_header = 1, verbose = 1):
+        super(Orientation, self).__init__(input_image, verbose=verbose)
+        self.orientation = orientation
+        self.remove_tmp_files = remove_tmp_files
+        self.change_header = change_header
+        self.output_filename = output_filename
+
+    def execute(self):
+        pass
+
+class OrientationScript(BaseScript):
+    def __init__(self):
+        super(OrientationScript, self).__init__()
+
+    @staticmethod
+    def get_parser():
+        parser = Parser(__file__)
+
+        parser.usage.set_description("Get or set orientation of 3D or 4D data.")
+        parser.add_option(name="-i",
+                          type_value="image_nifti",
+                          description="input image.",
+                          mandatory=True,
+                          example="t2.nii.gz")
+        parser.add_option(name="-o",
+                          type_value="file_output",
+                          description="output file name.",
+                          mandatory=False,
+                          example="out.nii.gz")
+        parser.add_option(name="-r",
+                          type_value="multiple_choice",
+                          description="Remove temporary files.",
+                          mandatory=False,
+                          default_value=1,
+                          example=['0', '1'])
+        parser.add_option(name="-s",
+                          type_value="multiple_choice",
+                          description="Desired orientation",
+                          default_value="None",
+                          mandatory=False,
+                          example=['None', 'RIP', 'LIP', 'RSP', 'LSP', 'RIA', 'LIA', 'RSA', 'LSA', 'IRP', 'ILP', 'SRP', 'SLP', 'IRA', 'ILA', 'SRA', 'SLA', 'RPI', 'LPI', 'RAI', 'LAI', 'RPS', 'LPS', 'RAS', 'LAS', 'PRI' 'PLI', 'ARI', 'ALI', 'PRS', 'PLS', 'ARS', 'ALS', 'IPR', 'SPR', 'IAR', 'SAR', 'IPL', 'SPL', 'IAL', 'SAL', 'PIR', 'PSR', 'AIR', 'ASR', 'PIL', 'PSL', 'AIL', 'ASL'])
+        parser.add_option(name="-r",
+                          type_value="multiple_choice",
+                          description="Remove temporary files.",
+                          mandatory=False,
+                          default_value=1,
+                          example=['0', '1'])
+
 class Param:
-    ## The constructor
+    ## The constructorin
     def __init__(self):
         self.debug = 0
         self.fname_data = ''
