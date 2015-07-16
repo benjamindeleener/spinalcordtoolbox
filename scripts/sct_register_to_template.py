@@ -20,9 +20,9 @@ import time
 
 import sct_utils as sct
 from sct_orientation import set_orientation
-from sct_register_multimodal import Paramreg, ParamregMultiStep, register, find_zmin_zmax
+from sct_register_multimodal import Paramreg, ParamregMultiStep, register
 from msct_parser import Parser
-from msct_image import Image
+from msct_image import Image, find_zmin_zmax
 
 
 # get path of the toolbox
@@ -269,6 +269,10 @@ def main():
     # Convert landmarks from FLOAT32 to INT
     sct.printv('\nConvert landmarks from FLOAT32 to INT...', verbose)
     sct.run('isct_c3d landmarks_rpi_cross3x3_straight.nii.gz -type int -o landmarks_rpi_cross3x3_straight.nii.gz')
+
+    # Remove unused label on template. Keep only label present in the input label image
+    sct.printv('\nRemove labels that do not correspond with each others.', verbose)
+    sct.run('sct_label_utils -t remove-symm -i landmarks_rpi_cross3x3_straight.nii.gz -o landmarks_rpi_cross3x3_straight.nii.gz,template_label_cross.nii.gz -r template_label_cross.nii.gz')
 
     # Estimate affine transfo: straight --> template (landmark-based)'
     sct.printv('\nEstimate affine transfo: straight anat --> template (landmark-based)...', verbose)
