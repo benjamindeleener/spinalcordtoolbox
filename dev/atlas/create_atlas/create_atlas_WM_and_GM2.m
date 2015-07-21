@@ -77,7 +77,7 @@ label_values = [label_left, label_right, label_GM_left, label_GM_right, label_pv
 % NB: to extract these values, you have to look at the T2 and WM template, because this script will crop the WM template (which can be smaller than the T2), therefore the maximum z cannot exceed the zmax that will be generated in the cropped version of the WM template.
 %z_disks_mid = [483 476 466 455 440 423 406 387 371 356 339 324 303 286 268 248 229 208 186 166 143 122 98 79 53 35 13 0];
 %z_disks_mid_T2file = [948 928 912 899 879 863 845 829 812 796 778 762 744 728 708 688 668 648 626 605 583 561 538 516 494 470 446 424 397 371 345 320 294 269 240 212 204];
-z_disks_mid_T2_file = [744 724 708 695 675 659 641 625 608 592 574 558 540 524 504 484 464 444 422 401 379 357 334 312 290 266 242 220 193 167 141 116 90 65 36 8 0];
+z_disks_mid = [744 724 708 695 675 659 641 625 608 592 574 558 540 524 504 484 464 444 422 401 379 357 334 312 290 266 242 220 193 167 141 116 90 65 36 8 0];
 % same as before-- except that C4 mid-vertebral is not listed. 
 %z_disks_mid_noC4 = [483 476 466 455 440 423 406 371 356 339 324 303 286 268 248 229 208 186 166 143 122 98 79 53 35 13 0];
 z_disks_mid_noC4 = [744 724 708 695 675 659 625 608 592 574 558 540 524 504 484 464 444 422 401 379 357 334 312 290 266 242 220 193 167 141 116 90 65 36 8 0];
