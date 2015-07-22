@@ -1,0 +1,3 @@
+Those files are centered at x=50 when it should be x=49.
+Apply warp_trans_0.5mm.nii.gz to all files to change x_center to 49 
+(e.g.: sct_apply_transfo -i MNI-Poly-AMU_T2.nii.gz -d MNI-Poly-AMU_T2.nii.gz -w warp_trans_0.5mm.nii.gz -o MNI-Poly-AMU_T2_center49.nii.gz)

@@ -18,8 +18,10 @@ ext_o = '.nii.gz'
 path_info = '/Users/tamag/code/spinalcordtoolbox/dev/GM_atlas/raw_data'
 path_output = '/Users/tamag/code/spinalcordtoolbox/dev/GM_atlas/raw_data/test'
 
-# input: greyscale_final.png
-# output: greyscale_final_resampled_registered_crop_resized.png
+# inputs: 
+#   -greyscale_GM_atlas.png
+#   -atlas_grays_cerv_sym_correc_r5_horizontal.png
+# final output: concatenation.png'
 
 
 def main():
@@ -40,8 +42,8 @@ def main():
     fname10 = 'greyscale_GM_atlas_resampled_registered_crop_resized.png'
     fname11 = 'greyscale_reg_no_trans.png'
     fname12 = 'greyscale_reg_no_trans_sym.png'
-    fname13 = 'atlas_grays_cerv_sym_correc_r5_horizontal.png' #horizontal roientation
-
+    fname13 = 'atlas_grays_cerv_sym_correc_r5_horizontal.png' #horizontal orientation
+    name_output = 'concatenation.png'
 
     # Copy file to path_output
     print '\nCopy files to output folder'
@@ -57,11 +59,6 @@ def main():
     save_nii_from_png(fname2)
     save_nii_from_png(fname3)
     save_nii_from_png(fname4)
-
-    # Crop image background
-
-    #sct.run('sct_crop_image -i '+ name2 + ext_o +' -dim 0,1 -start 84,0 -end 1581,1029 -b 0 -o binary_gm_crop.nii.gz')
-    #name2 = 'binary_gm_crop'
 
     # Interpolation of the images to set them in the right format
     print'\nInterpolate images to set them in the right format'
@@ -152,7 +149,7 @@ def main():
 
     #concatenation of GM and WM tracts: inputs: atlas_grays_cerv_sym_correc_r5.png  and  greyscale_reg_no_trans_sym.png  output: concatenation.png
     print '\nConcatenating WM and GM tracts...'
-    concatenate_WM_and_GM(WM_file=fname13, GM_file=fname12, name_output='concatenation.png')
+    concatenate_WM_and_GM(WM_file=fname13, GM_file=fname12, name_output=name_output)
 
     #small hand corrections:  input: concatenation.png  output: concatenation_corrected.png
 
