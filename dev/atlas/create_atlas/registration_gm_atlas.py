@@ -1,4 +1,18 @@
 #!/usr/bin/env python
+#
+# ---------------------------------------------------------------------------------------
+# Copyright (c) 2015 Polytechnique Montreal <www.neuro.polymtl.ca>
+# Authors: Tanguy Magnan
+# Modified: 2015-07-29
+#
+# About the license: see the file LICENSE.TXT
+#########################################################################################
+#
+# inputs:
+#   -greyscale_GM_atlas.png
+#   -atlas_grays_cerv_sym_correc_r5_horizontal.png
+# final output: concatenation.png'
+
 
 import os, sys, commands
 
@@ -13,20 +27,14 @@ import nibabel
 import sct_utils as sct
 import matplotlib.pyplot as plt
 from copy import copy
+import time
 
 ext_o = '.nii.gz'
-path_info = '/Users/tamag/code/spinalcordtoolbox/dev/GM_atlas/raw_data'
-path_output = '/Users/tamag/code/spinalcordtoolbox/dev/GM_atlas/raw_data/test'
-
-# inputs: 
-#   -greyscale_GM_atlas.png
-#   -atlas_grays_cerv_sym_correc_r5_horizontal.png
-# final output: concatenation.png'
+path_info = path_sct + '/dev/atlas/raw_data/registration_GM_to_WM'
+path_output = ''
 
 
 def main():
-
-    os.chdir(path_output)
 
     # Define names
     fname1 = 'greyscale_GM_atlas.png'  # greyscale image showing tracts (warp applied to it at the end)
@@ -45,7 +53,15 @@ def main():
     fname13 = 'atlas_grays_cerv_sym_correc_r5_horizontal.png' #horizontal orientation
     name_output = 'concatenation.png'
 
-    # Copy file to path_output
+    os.chdir(path_output)
+
+    # Create temporary folder
+    path_tmp = 'tmp.'+time.strftime("%y%m%d%H%M%S")
+    sct.run('mkdir '+path_tmp)
+
+    os.chdir(path_tmp)
+
+    # Copy file to tmp folder
     print '\nCopy files to output folder'
     sct.run('cp '+ path_info+'/'+ fname1 + ' '+fname1)
     sct.run('cp '+ path_info+'/'+ fname2 + ' '+fname2)
@@ -104,9 +120,6 @@ def main():
     concat_and_apply(inputs=[name2+'_resampled'+ext_o, name3+'_resampled'+ext_o], dest=name4+ext_o,
                  output_names=[name2+'_resampled'+'_registered'+ext_o, name3+'_resampled'+'_registered'+ext_o],
                  warps=[warp_1_prefix+'0GenericAffine.mat', warp_2_prefix + '1Warp.nii.gz'], interpolation='NearestNeighbor')
-    # concat_and_apply(inputs=[name1+'_resampled'+ext_o, name2+'_resampled'+ext_o, name3+'_resampled'+ext_o], dest=name4+ext_o,
-    #          output_names=[name1+'_resampled'+'_registered'+ext_o, name2+'_resampled'+'_registered'+ext_o, name3+'_resampled'+'_registered'+ext_o],
-    #          warps=[warp_1_prefix+'0GenericAffine.mat', warp_2_prefix + '1Warp.nii.gz'], interpolation='Linear')
 
     # Save png images of the registered NIFTI images
     print '\nSave png images of the registered nifti images'
@@ -150,6 +163,20 @@ def main():
     #concatenation of GM and WM tracts: inputs: atlas_grays_cerv_sym_correc_r5.png  and  greyscale_reg_no_trans_sym.png  output: concatenation.png
     print '\nConcatenating WM and GM tracts...'
     concatenate_WM_and_GM(WM_file=fname13, GM_file=fname12, name_output=name_output)
+
+    # Copy files of interest to parent folder
+    sct.run('cp ' + name_output + ' ../' + name_output)
+    sct.run('cp ' + fname10 + ' ../' + fname10)
+    sct.run('cp white_WM_mask_resampled_registered_crop_resized.png ../white_WM_mask_resampled_registered_crop_resized.png')
+    sct.run('cp white_GM_mask_resampled_registered_crop_resized.png ../white_GM_mask_resampled_registered_crop_resized.png')
+    sct.run('cp GM_file_WM_to_zero.png ../GM_file_WM_to_zero.png')
+
+    # Go back to parent folder
+    os.chdir('..')
+
+    # remove temporary folder
+    print('\nRemove temporary files...')
+    sct.run('rm -rf '+path_tmp)
 
     #small hand corrections:  input: concatenation.png  output: concatenation_corrected.png
 
