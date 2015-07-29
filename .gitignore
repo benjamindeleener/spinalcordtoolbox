@@ -32,6 +32,7 @@ spinalcordtoolbox_v*
 dev/atlas/create_atlas/WMtracts_outputs
 dev/atlas/validate_atlas/tmp.*
 
+<<<<<<< HEAD
 bin/test_regist
 data/atlas/WMtract__sum.nii.gz
 data/template/center_x50/info.txt
@@ -3017,6 +3018,8 @@ dev/atlas/create_atlas/WM_and_GM_tracts_outputs/registered_template/MNI-Poly-AMU
 dev/atlas/create_atlas/WM_and_GM_tracts_outputs/registered_template/MNI-Poly-AMU_WM_c6v_int6_thrp6_slice_ref_reg65.nii.gz
 dev/atlas/create_atlas/WM_and_GM_tracts_outputs/registered_template/MNI-Poly-AMU_WM_c6v_int6_thrp6_slice_ref_reg8.nii.gz
 dev/atlas/create_atlas/WM_and_GM_tracts_outputs/registered_template/MNI-Poly-AMU_WM_c6v_int6_thrp6_slice_ref_reg90.nii.gz
+=======
+>>>>>>> master
 testing/tmp.150729101739/results_sct_apply_transfo/MNI-Poly-AMU_T2_reg.nii.gz
 testing/tmp.150729101739/results_sct_apply_transfo/results_sct_check_atlas_integrity/results_sct_compute_mtr/mtr.nii.gz
 testing/tmp.150729101739/results_sct_apply_transfo/results_sct_check_atlas_integrity/results_sct_compute_mtr/results_sct_concat_transfo/warp_final.nii.gz
