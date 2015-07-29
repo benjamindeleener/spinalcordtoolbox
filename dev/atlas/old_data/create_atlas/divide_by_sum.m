@@ -38,18 +38,18 @@ end
 cmd_sum = [cmd_sum, ' ', prefix_out, '_sum_all', ext];
 disp(cmd_sum); [status,result] = unix(cmd_sum); if(status), error(result); end
 
-% % loop across tracts
-% for label = 1:length(label_values)
-%     % divide each slice by the sum of all tracts (even CSF)
-%     cmd = ['fslmaths ', prefix_out, '_', cell_tract{label}, ext, ' -div ', prefix_out, '_sum_all', ext, ' ', prefix_out, '_', cell_tract{label}, '_div', ext];
-%     disp(cmd); [status,result] = unix(cmd); if(status), error(result); end
-%     % Extend command display
-%     cmd_display = [cmd_display, ' ', prefix_out, '_', cell_tract{label}, '_div', ext];
-% end
-% 
-% % sum of all divided tracts
-% cmd_sum_div = [cmd_sum_div, ' ', prefix_out, '_sum_all_div', ext];
-% disp(cmd_sum_div); [status,result] = unix(cmd_sum_div); if(status), error(result); end
-% 
-% cmd_display = [cmd_display, '&'];
-% disp(cmd_display);
+% loop across tracts
+for label = 1:length(label_values)
+    % divide each slice by the sum of all tracts (even CSF)
+    cmd = ['fslmaths ', prefix_out, '_', cell_tract{label}, ext, ' -div ', prefix_out, '_sum_all', ext, ' ', prefix_out, '_', cell_tract{label}, '_div', ext];
+    disp(cmd); [status,result] = unix(cmd); if(status), error(result); end
+    % Extend command display
+    cmd_display = [cmd_display, ' ', prefix_out, '_', cell_tract{label}, '_div', ext];
+end
+
+% sum of all divided tracts
+cmd_sum_div = [cmd_sum_div, ' ', prefix_out, '_sum_all_div', ext];
+disp(cmd_sum_div); [status,result] = unix(cmd_sum_div); if(status), error(result); end
+
+cmd_display = [cmd_display, '&'];
+disp(cmd_display);
