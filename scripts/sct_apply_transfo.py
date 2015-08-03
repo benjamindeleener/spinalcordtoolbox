@@ -162,8 +162,8 @@ class ApplyTransfo(Algorithm):
                     cmd = cmd+' '+file_data_split_reg
                 sct.run(cmd, verbose)
 
-            except:
-                pass
+            except Exception, e:
+                raise e
             # Copy result to parent folder
             sct.run('cp ' + fname_out + ' ../' + fname_out)
 
@@ -220,10 +220,10 @@ if __name__ == "__main__":
                       example=['0','1','2'])
     parser.add_option(name="-o",
                       type_value="file_output",
-                      description="output file",
+                      description="registered source.",
                       mandatory=False,
                       default_value='',
-                      example="source.nii.gz")
+                      example="source_reg.nii.gz")
     parser.add_option(name="-x",
                       type_value="multiple_choice",
                       description="interpolation method",

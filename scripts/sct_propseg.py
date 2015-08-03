@@ -37,7 +37,7 @@ class Script(BaseScript):
         Several tips on segmentation correction can be found on the "Correction Tips" page of the documentation while advices on parameters adjustments can be found on the "Parameters" page.
         If the segmentation fails at some location (e.g. due to poor contrast between spinal cord and CSF), edit your anatomical image (e.g. with fslview) and manually enhance the contrast by adding bright values around the spinal cord for T2-weighted images (dark values for T1-weighted). Then, launch the segmentation again.''')
         parser.add_option(name="-i",
-                          type_value="file",
+                          type_value="image_nifti",
                           description="input image.",
                           mandatory=True,
                           example="t2.nii.gz")
@@ -163,7 +163,7 @@ class Script(BaseScript):
         return parser
 
 if __name__ == "__main__":
-    parser = Script()
+    parser = Script.get_parser()
 
     arguments = parser.parse(sys.argv[1:])
 
@@ -232,6 +232,12 @@ if __name__ == "__main__":
         cmd += " -min-contrast " + str(arguments["-min-contrast"])
     if "-d" in arguments:
         cmd += " -d " + str(arguments["-d"])
+
+    # check if input image is in 3D. Otherwise itk image reader will cut the 4D image in 3D volumes and only take the first one.
+    from sct_utils import get_dimension
+    nx, ny, nz, nt, px, py, pz, pt = get_dimension(input_filename)
+    if nt > 1:
+        sct.printv('ERROR: your input image needs to be 3D in order to be segmented.', 1, 'error')
 
     sct.run(cmd, verbose)
 
