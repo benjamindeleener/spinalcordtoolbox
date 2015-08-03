@@ -16,9 +16,9 @@ import sys
 import sct_utils as sct
 from msct_base_classes import BaseScript
 
-class ScriptPropseg(BaseScript):
+class Script(BaseScript):
     def __init__(self):
-        super(ScriptPropseg, self).__init__()
+        super(Script, self).__init__()
 
     @staticmethod
     def get_parser():
@@ -162,92 +162,87 @@ class ScriptPropseg(BaseScript):
 
         return parser
 
-    def main(self):
-
-        parser = self.get_parser()
-
-        arguments = parser.parse(sys.argv[1:])
-
-        input_filename = arguments["-i"]
-        contrast_type = arguments["-t"]
-
-        # Building the command
-        cmd = "isct_propseg" + " -i " + input_filename + " -t " + contrast_type
-
-        folder_output = arguments["-o"]
-        cmd += " -o " + folder_output
-
-        if "-down" in arguments:
-            cmd += " -down " + str(arguments["-down"])
-        if "-up" in arguments:
-            cmd += " -up " + str(arguments["-up"])
-
-        verbose = 0
-        if "-v" in arguments:
-            if arguments["-v"] is "1":
-                verbose = 2
-                cmd += " -verbose"
-
-        # Output options
-        if "-mesh" in arguments:
-            cmd += " -mesh"
-        if "-centerline-binary" in arguments:
-            cmd += " -centerline-binary"
-        if "-CSF" in arguments:
-            cmd += " -CSF"
-        if "-centerline-coord" in arguments:
-            cmd += " -centerline-coord"
-        if "-cross" in arguments:
-            cmd += " -cross"
-        if "-init-tube" in arguments:
-            cmd += " -init-tube"
-        if "-low-resolution-mesh" in arguments:
-            cmd += " -low-resolution-mesh"
-        if "-detect-nii" in arguments:
-            cmd += " -detect-nii"
-        if "-detect-png" in arguments:
-            cmd += " -detect-png"
-
-        # Helping options
-        if "-init-centerline" in arguments:
-            cmd += " -init-centerline " + str(arguments["-init-centerline"])
-        if "-init" in arguments:
-            cmd += " -init " + str(arguments["-init"])
-        if "-init-mask" in arguments:
-            cmd += " -init-mask " + str(arguments["-init-mask"])
-        if "-radius" in arguments:
-            cmd += " -radius " + str(arguments["-radius"])
-        if "-detect-n" in arguments:
-            cmd += " -detect-n " + str(arguments["-detect-n"])
-        if "-detect-gap" in arguments:
-            cmd += " -detect-gap " + str(arguments["-detect-gap"])
-        if "-init-validation" in arguments:
-            cmd += " -init-validation"
-        if "-nbiter" in arguments:
-            cmd += " -nbiter " + str(arguments["-nbiter"])
-        if "-max-area" in arguments:
-            cmd += " -max-area " + str(arguments["-max-area"])
-        if "-max-deformation" in arguments:
-            cmd += " -max-deformation " + str(arguments["-max-deformation"])
-        if "-min-contrast" in arguments:
-            cmd += " -min-contrast " + str(arguments["-min-contrast"])
-        if "-d" in arguments:
-            cmd += " -d " + str(arguments["-d"])
-
-        sct.run(cmd, verbose)
-
-        sct.printv('\nDone! To view results, type:', verbose)
-        # extracting output filename
-        path_fname, file_fname, ext_fname = sct.extract_fname(input_filename)
-        output_filename = file_fname+"_seg"+ext_fname
-
-        if folder_output == ".":
-            output_name = output_filename
-        else:
-            output_name = folder_output+"/"+output_filename
-        sct.printv("fslview "+input_filename+" "+output_name+" -l Red -b 0,1 -t 0.7 &\n", verbose, 'info')
-
 if __name__ == "__main__":
-    script = ScriptPropseg()
-    script.main()
+    parser = Script()
+
+    arguments = parser.parse(sys.argv[1:])
+
+    input_filename = arguments["-i"]
+    contrast_type = arguments["-t"]
+
+    # Building the command
+    cmd = "isct_propseg" + " -i " + input_filename + " -t " + contrast_type
+
+    folder_output = arguments["-o"]
+    cmd += " -o " + folder_output
+
+    if "-down" in arguments:
+        cmd += " -down " + str(arguments["-down"])
+    if "-up" in arguments:
+        cmd += " -up " + str(arguments["-up"])
+
+    verbose = 0
+    if "-v" in arguments:
+        if arguments["-v"] is "1":
+            verbose = 2
+            cmd += " -verbose"
+
+    # Output options
+    if "-mesh" in arguments:
+        cmd += " -mesh"
+    if "-centerline-binary" in arguments:
+        cmd += " -centerline-binary"
+    if "-CSF" in arguments:
+        cmd += " -CSF"
+    if "-centerline-coord" in arguments:
+        cmd += " -centerline-coord"
+    if "-cross" in arguments:
+        cmd += " -cross"
+    if "-init-tube" in arguments:
+        cmd += " -init-tube"
+    if "-low-resolution-mesh" in arguments:
+        cmd += " -low-resolution-mesh"
+    if "-detect-nii" in arguments:
+        cmd += " -detect-nii"
+    if "-detect-png" in arguments:
+        cmd += " -detect-png"
+
+    # Helping options
+    if "-init-centerline" in arguments:
+        cmd += " -init-centerline " + str(arguments["-init-centerline"])
+    if "-init" in arguments:
+        cmd += " -init " + str(arguments["-init"])
+    if "-init-mask" in arguments:
+        cmd += " -init-mask " + str(arguments["-init-mask"])
+    if "-radius" in arguments:
+        cmd += " -radius " + str(arguments["-radius"])
+    if "-detect-n" in arguments:
+        cmd += " -detect-n " + str(arguments["-detect-n"])
+    if "-detect-gap" in arguments:
+        cmd += " -detect-gap " + str(arguments["-detect-gap"])
+    if "-init-validation" in arguments:
+        cmd += " -init-validation"
+    if "-nbiter" in arguments:
+        cmd += " -nbiter " + str(arguments["-nbiter"])
+    if "-max-area" in arguments:
+        cmd += " -max-area " + str(arguments["-max-area"])
+    if "-max-deformation" in arguments:
+        cmd += " -max-deformation " + str(arguments["-max-deformation"])
+    if "-min-contrast" in arguments:
+        cmd += " -min-contrast " + str(arguments["-min-contrast"])
+    if "-d" in arguments:
+        cmd += " -d " + str(arguments["-d"])
+
+    sct.run(cmd, verbose)
+
+    sct.printv('\nDone! To view results, type:', verbose)
+    # extracting output filename
+    path_fname, file_fname, ext_fname = sct.extract_fname(input_filename)
+    output_filename = file_fname + "_seg" + ext_fname
+
+    if folder_output == ".":
+        output_name = output_filename
+    else:
+        output_name = folder_output + "/" + output_filename
+    sct.printv("fslview " + input_filename + " " + output_name + " -l Red -b 0,1 -t 0.7 &\n", verbose, 'info')
 
