@@ -857,6 +857,8 @@ class Script(BaseScript):
                           mandatory=False,
                           example="8")
 
+        return parser
+
 
 if __name__ == "__main__":
     # Initialize parser
@@ -910,4 +912,4 @@ if __name__ == "__main__":
             elif param_split[0] == 'gapz':
                 sc_straight.gapz = int(param_split[1])
 
-    sc_straight.straighten()
+    sc_straight.execute()
