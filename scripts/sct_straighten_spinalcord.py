@@ -31,6 +31,7 @@ from msct_smooth import smoothing_window, evaluate_derivative_3D
 from sct_orientation import set_orientation
 from msct_base_classes import Algorithm
 from msct_types import Coordinate
+from msct_base_classes import BaseScript
 
 import copy_reg
 import types
@@ -779,76 +780,87 @@ class SpinalCordStraightener(Algorithm):
         sct.printv('\nTo view results, type:', verbose)
         sct.printv('fslview '+fname_straight+' &\n', verbose, 'info')
 
+class Script(BaseScript):
+    def __init__(self):
+        super(Script, self).__init__()
+
+    @staticmethod
+    def get_parser():
+        # Initialize parser
+        parser = Parser(__file__)
+
+        # Mandatory arguments
+        parser.usage.set_description(
+            "This program takes as input an anatomic image and the centerline or segmentation of its spinal cord (that you can get using sct_get_centerline.py or sct_segmentation_propagation) and returns the anatomic image where the spinal cord was straightened.")
+        parser.add_option(name="-i",
+                          type_value="image_nifti",
+                          description="input image.",
+                          mandatory=True,
+                          example="t2.nii.gz")
+        parser.add_option(name="-c",
+                          type_value="image_nifti",
+                          description="centerline or segmentation.",
+                          mandatory=True,
+                          example="centerline.nii.gz")
+        parser.add_option(name="-p",
+                          type_value="int",
+                          description="amount of padding for generating labels.",
+                          mandatory=False,
+                          example="30",
+                          default_value=30)
+        parser.add_option(name="-x",
+                          type_value="multiple_choice",
+                          description="Final interpolation.",
+                          mandatory=False,
+                          example=["nn", "linear", "spline"],
+                          default_value="spline")
+        parser.add_option(name="-o",
+                          type_value="file_output",
+                          description="output file",
+                          mandatory=False,
+                          default_value='',
+                          example="out.nii.gz")
+        parser.add_option(name="-r",
+                          type_value="multiple_choice",
+                          description="remove temporary files.",
+                          mandatory=False,
+                          example=['0', '1'],
+                          default_value='1')
+        parser.add_option(name="-a",
+                          type_value="multiple_choice",
+                          description="Algorithm for curve fitting.",
+                          mandatory=False,
+                          example=["hanning", "nurbs"],
+                          default_value="hanning")
+        parser.add_option(name="-f",
+                          type_value="multiple_choice",
+                          description="Crop option. 0: no crop, 1: crop around landmarks.",
+                          mandatory=False,
+                          example=['0', '1'],
+                          default_value=1)
+        parser.add_option(name="-v",
+                          type_value="multiple_choice",
+                          description="Verbose. 0: nothing, 1: basic, 2: extended.",
+                          mandatory=False,
+                          example=['0', '1', '2'],
+                          default_value=1)
+
+        parser.add_option(name="-params",
+                          type_value=[[','], 'str'],
+                          description="""Parameters for spinal cord straightening. Separate arguments with ",".\nuse_continuous_labels : 0,1. Default = False\nalgo_fitting: {hanning,nurbs} algorithm for curve fitting. Default=hanning\nbspline_meshsize: <int>x<int>x<int> size of mesh for B-Spline registration. Default=5x5x10\nbspline_numberOfLevels: <int> number of levels for BSpline interpolation. Default=3\nbspline_order: <int> Order of BSpline for interpolation. Default=2\nalgo_landmark_rigid {rigid,xy,translation,translation-xy,rotation,rotation-xy} constraints on landmark-based rigid pre-registration""",
+                          mandatory=False,
+                          example="algo_fitting=nurbs,bspline_meshsize=5x5x12,algo_landmark_rigid=xy")
+
+        parser.add_option(name="-cpu-nb",
+                          type_value="int",
+                          description="Number of CPU used for straightening. 0: no multiprocessing. If not provided, it uses all the available cores.",
+                          mandatory=False,
+                          example="8")
+
+
 if __name__ == "__main__":
     # Initialize parser
-    parser = Parser(__file__)
-
-    #Mandatory arguments
-    parser.usage.set_description("This program takes as input an anatomic image and the centerline or segmentation of its spinal cord (that you can get using sct_get_centerline.py or sct_segmentation_propagation) and returns the anatomic image where the spinal cord was straightened.")
-    parser.add_option(name="-i",
-                      type_value="image_nifti",
-                      description="input image.",
-                      mandatory=True,
-                      example="t2.nii.gz")
-    parser.add_option(name="-c",
-                      type_value="image_nifti",
-                      description="centerline or segmentation.",
-                      mandatory=True,
-                      example="centerline.nii.gz")
-    parser.add_option(name="-p",
-                      type_value="int",
-                      description="amount of padding for generating labels.",
-                      mandatory=False,
-                      example="30",
-                      default_value=30)
-    parser.add_option(name="-x",
-                      type_value="multiple_choice",
-                      description="Final interpolation.",
-                      mandatory=False,
-                      example=["nn", "linear", "spline"],
-                      default_value="spline")
-    parser.add_option(name="-o",
-                      type_value="file_output",
-                      description="output file",
-                      mandatory=False,
-                      default_value='',
-                      example="out.nii.gz")
-    parser.add_option(name="-r",
-                      type_value="multiple_choice",
-                      description="remove temporary files.",
-                      mandatory=False,
-                      example=['0', '1'],
-                      default_value='1')
-    parser.add_option(name="-a",
-                      type_value="multiple_choice",
-                      description="Algorithm for curve fitting.",
-                      mandatory=False,
-                      example=["hanning", "nurbs"],
-                      default_value="hanning")
-    parser.add_option(name="-f",
-                      type_value="multiple_choice",
-                      description="Crop option. 0: no crop, 1: crop around landmarks.",
-                      mandatory=False,
-                      example=['0', '1'],
-                      default_value=1)
-    parser.add_option(name="-v",
-                      type_value="multiple_choice",
-                      description="Verbose. 0: nothing, 1: basic, 2: extended.",
-                      mandatory=False,
-                      example=['0', '1', '2'],
-                      default_value=1)
-
-    parser.add_option(name="-params",
-                      type_value=[[','], 'str'],
-                      description="""Parameters for spinal cord straightening. Separate arguments with ",".\nuse_continuous_labels : 0,1. Default = False\nalgo_fitting: {hanning,nurbs} algorithm for curve fitting. Default=hanning\nbspline_meshsize: <int>x<int>x<int> size of mesh for B-Spline registration. Default=5x5x10\nbspline_numberOfLevels: <int> number of levels for BSpline interpolation. Default=3\nbspline_order: <int> Order of BSpline for interpolation. Default=2\nalgo_landmark_rigid {rigid,xy,translation,translation-xy,rotation,rotation-xy} constraints on landmark-based rigid pre-registration""",
-                      mandatory=False,
-                      example="algo_fitting=nurbs,bspline_meshsize=5x5x12,algo_landmark_rigid=xy")
-
-    parser.add_option(name="-cpu-nb",
-                      type_value="int",
-                      description="Number of CPU used for straightening. 0: no multiprocessing. If not provided, it uses all the available cores.",
-                      mandatory=False,
-                      example="8")
+    parser = Script.get_parser()
 
     arguments = parser.parse(sys.argv[1:])
 
