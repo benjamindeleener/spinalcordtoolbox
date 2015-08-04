@@ -19,6 +19,41 @@ import os
 import getopt
 import commands
 import sct_utils as sct
+from msct_base_classes import Algorithm, BaseScript
+from msct_parser import Parser
+
+class ConcatScript(BaseScript):
+    def __init__(self):
+        super(ConcatScript, self).__init__()
+
+    @staticmethod
+    def get_parser():
+        parser = Parser(__file__)
+        parser.usage.set_description("Concatenate transformations. This function is a wrapper for isct_ComposeMultiTransform (ANTs).\n" \
+                                     "N.B. Order of input warping fields is important. For example, if you want to concatenate: A->B and\n" \
+                                     "B->C to yield A->C, then you have to input warping fields like that: A->B,B->C")
+        parser.add_option(name="-w",
+                          type_value=[[","], "image_nifti"],
+                          description="input files.",
+                          mandatory=True,
+                          example="warp1.nii.gz,warp2.nii.gz")
+        parser.add_option(name="-d",
+                          type_value="file_output",
+                          description="destination image",
+                          mandatory=True,
+                          example="out.nii.gz")
+        parser.add_option(name="-o",
+                          type_value="file_output",
+                          description="name of the output warping field",
+                          mandatory=False,
+                          default_value='warp_final.nii.gz',
+                          example="warp_final.nii.gz")
+        parser.add_option(name="-v",
+                          type_value="multiple_choice",
+                          description="Verbose. 0: nothing, 1: basic, 2: extended.",
+                          mandatory=False,
+                          example=['0', '1'],
+                          default_value=1)
 
 # DEFAULT PARAMETERS
 class Param:
