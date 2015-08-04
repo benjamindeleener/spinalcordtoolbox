@@ -175,9 +175,9 @@ class SpinalCordStraightener(object):
         self.bspline_meshsize = '5x5x10'
         self.bspline_numberOfLevels = '3'
         self.bspline_order = '2'
-        self.algo_landmark_rigid = None
+        self.algo_landmark_rigid = 'translation-xy'
         self.all_labels = 0
-        self.use_continuous_labels = 0
+        self.use_continuous_labels = 1
 
         self.mse_straightening = 0.0
         self.max_distance_straightening = 0.0
@@ -202,7 +202,7 @@ class SpinalCordStraightener(object):
                 # set coordinates for landmark at the center of the cross
                 coord = Coordinate([0, 0, 0, 0])
                 coord.x, coord.y, coord.z = x_centerline_fit[iz], y_centerline_fit[iz], z_centerline[iz]
-                temp_results.append(coord)
+                # temp_results.append(coord)
 
                 # set y coordinate to y_centerline_fit[iz] for elements 1 and 2 of the cross
                 cross_coordinates = [Coordinate(), Coordinate(), Coordinate(), Coordinate()]
@@ -229,7 +229,7 @@ class SpinalCordStraightener(object):
                 cross_coordinates[3].z = (-1 / c) * (a * x + b * cross_coordinates[3].y + d)  # z for -y
 
                 for coord in cross_coordinates:
-                    temp_results.append(coord)
+                   temp_results.append(coord)
             else:
                 if self.all_labels >= 1:
                     temp_results.append(
@@ -420,7 +420,7 @@ class SpinalCordStraightener(object):
                 if iz in iz_curved:
                     index = iz_curved.index(iz)
                     # set coordinates for landmark at the center of the cross
-                    landmark_straight.append(Coordinate([x0, y0, iz_straight[index], landmark_curved_value]))
+                    # landmark_straight.append(Coordinate([x0, y0, iz_straight[index], landmark_curved_value]))
                     # set x, y and z coordinates for landmarks +x
                     landmark_straight.append(Coordinate([x0 + gapxy, y0, iz_straight[index], landmark_curved_value+1]))
                     # set x, y and z coordinates for landmarks -x
@@ -429,17 +429,11 @@ class SpinalCordStraightener(object):
                     landmark_straight.append(Coordinate([x0, y0 + gapxy, iz_straight[index], landmark_curved_value+3]))
                     # set x, y and z coordinates for landmarks -y
                     landmark_straight.append(Coordinate([x0, y0 - gapxy, iz_straight[index], landmark_curved_value+4]))
-                    landmark_curved_value += 5
+                    landmark_curved_value += 4
                 else:
                     if self.all_labels >= 1:
                         landmark_straight.append(Coordinate([x0, y0, iz, landmark_curved_value]))
                         landmark_curved_value += 1
-
-            # Writting landmark curve in text file
-            landmark_straight_file = open("LandmarksRealStraight.txt", "w+")
-            for i in landmark_straight:
-                landmark_straight_file.write(str(i.x + padding)+","+str(i.y + padding)+","+str(i.z + padding)+"\n")
-            landmark_straight_file.close()
 
             # Create NIFTI volumes with landmarks
             #==========================================================================================
@@ -620,17 +614,32 @@ class SpinalCordStraightener(object):
                 ax.set_zlabel('z')
                 plt.show()
 
+
+            # Writting continuous value of landmark positions to
+            if self.algo_landmark_rigid is not None and self.algo_landmark_rigid != 'None':
+                # Writting landmark curve in text file
+                landmark_curved_file = open("LandmarksRealCurve.txt", "w+")
+                for i in landmark_curved_rigid:
+                    landmark_curved_file.write(str(int(round(i.x + padding)))+","+str(int(round(i.y + padding)))+","+str(int(round(i.z + padding)))+"\n")
+                landmark_curved_file.close()
+            else:
+                # Writting landmark curve in text file
+                landmark_curved_file = open("LandmarksRealCurve.txt", "w+")
+                for i in landmark_curved:
+                    landmark_curved_file.write(str(int(round(i.x + padding)))+","+str(int(round(i.y + padding)))+","+str(int(round(i.z + padding)))+"\n")
+                landmark_curved_file.close()
+
             # Writting landmark curve in text file
-            landmark_curved_file = open("LandmarksRealCurve.txt", "w+")
-            for i in landmark_curved_rigid:
-                landmark_curved_file.write(str(i.x + padding)+","+str(i.y + padding)+","+str(i.z + padding)+"\n")
-            landmark_curved_file.close()
+            landmark_straight_file = open("LandmarksRealStraight.txt", "w+")
+            for i in landmark_straight:
+                landmark_straight_file.write(str(int(round(i.x + padding)))+","+str(int(round(i.y + padding)))+","+str(int(round(i.z + padding)))+"\n")
+            landmark_straight_file.close()
 
             if (self.use_continuous_labels == 1 and self.algo_landmark_rigid is not None and self.algo_landmark_rigid != "None") or self.use_continuous_labels=='1':
                 # Estimate b-spline transformation curve --> straight
                 sct.printv('\nEstimate b-spline transformation: curve --> straight...', verbose)
 
-                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetBSplineDisplacementField tmp.landmarks_straight.nii.gz tmp.landmarks_curved_rigid.nii.gz tmp.warp_curve2straight.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' LandmarksRealCurve.txt LandmarksRealStraight.txt '+self.bspline_order+' 0', verbose)
+                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetThinPlateDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz LandmarksRealCurve.txt LandmarksRealStraight.txt tmp.warp_curve2straight.nii.gz my_output.nii.gz', verbose=2)
             else:
                 # This stands to avoid overlapping between landmarks
                 sct.printv('\nMake sure all labels between landmark_curved and landmark_curved match...', verbose)
@@ -667,7 +676,7 @@ class SpinalCordStraightener(object):
             # TODO: invert warping field instead of estimating a new one
             sct.printv('\nEstimate b-spline transformation: straight --> curve...', verbose)
             if (self.use_continuous_labels==1 and self.algo_landmark_rigid is not None and self.algo_landmark_rigid != "None") or self.use_continuous_labels=='1':
-                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetBSplineDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz tmp.warp_straight2curve.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' LandmarksRealCurve.txt LandmarksRealStraight.txt '+self.bspline_order+' 0', verbose)
+                sct.run('isct_ANTSUseLandmarkImagesWithTextFileToGetThinPlateDisplacementField tmp.landmarks_straight.nii.gz tmp.landmarks_curved_rigid.nii.gz LandmarksRealStraight.txt LandmarksRealCurve.txt tmp.warp_straight2curve.nii.gz', verbose=2)
             else:
                 sct.run('isct_ANTSUseLandmarkImagesToGetBSplineDisplacementField tmp.landmarks_curved_rigid.nii.gz tmp.landmarks_straight.nii.gz tmp.warp_straight2curve.nii.gz '+self.bspline_meshsize+' '+self.bspline_numberOfLevels+' '+self.bspline_order+' 0', verbose)
 
